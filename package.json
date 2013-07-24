@@ -23,7 +23,8 @@
     "grunt-contrib-coffee": "~0.7.0",
     "grunt-contrib-clean": "~0.5.0",
     "grunt-contrib-watch": "~0.5.1",
-    "socket.io-client": "~0.9.16"
+    "socket.io-client": "~0.9.16",
+    "async": "~0.2.9"
   },
   "scripts": {
     "test": "grunt test"

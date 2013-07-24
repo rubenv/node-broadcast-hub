@@ -10,7 +10,9 @@ class Client
         @messages = []
         @waiting = []
 
-        @client = socketIoClient.connect("http://localhost:#{@server.port}")
+        @client = socketIoClient.connect("http://localhost:#{@server.port}", {
+            'force new connection': true
+        })
         @client.on 'event', @processMessage
         @client.on 'connect', cb
         
@@ -21,6 +23,9 @@ class Client
         for [channel, body, cb] in @waiting
             if message.channel == channel && message.message == body
                 cb()
+
+    stop: () ->
+        @client.disconnect()
 
 
 common = module.exports =
@@ -41,10 +46,13 @@ common = module.exports =
 
     start: (done) ->
         server = common.startServer (err) ->
-            done(err) if err
+            return done(err) if err
             client = common.createClient server, (err) ->
-                done(err) if err
-                done(null, server, client)
+                done(err, server, client)
+
+    stop: (server, client) ->
+        common.stopServer(server)
+        client.stop()
 
     createClient: (server, cb) ->
         return new Client(server, cb)
