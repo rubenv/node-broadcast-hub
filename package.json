@@ -1,0 +1,40 @@
+{
+  "name": "broadcast-hub",
+  "version": "0.0.0",
+  "main": "./lib/index.js",
+  "description": "WebSockets backed by Redis pubsub.",
+  "keywords": [
+    "websockets",
+    "redis",
+    "pubsub"
+  ],
+  "dependencies": {
+    "redis": "~0.8.4",
+    "hiredis": "~0.1.15",
+    "socket.io": "~0.9.16"
+  },
+  "devDependencies": {
+    "grunt-release": "~0.3.5",
+    "grunt-mocha-cli": "~1.0.6",
+    "coffee-script": "~1.6.3",
+    "express": "~3.3.4",
+    "grunt-contrib-jshint": "~0.6.0",
+    "grunt-contrib-uglify": "~0.2.2",
+    "grunt-contrib-coffee": "~0.7.0",
+    "grunt-contrib-clean": "~0.5.0",
+    "grunt-contrib-watch": "~0.5.1",
+    "socket.io-client": "~0.9.16"
+  },
+  "scripts": {
+    "test": "grunt test"
+  },
+  "author": {
+    "name": "Ruben Vermeersch",
+    "email": "ruben@savanne.be",
+    "url": "http://savanne.be/"
+  },
+  "license": "MIT",
+  "engines": {
+    "node": ">=0.10.0"
+  }
+}
