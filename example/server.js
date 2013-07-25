@@ -9,7 +9,7 @@ var app = express();
 app.use(express.static(path.join(__dirname, '..')));
 
 // Start the express app
-server = app.listen(3000);
+var server = app.listen(3000);
 
 // Pass the http server to broadcastHub
 broadcastHub.listen(server);
