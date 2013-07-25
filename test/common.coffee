@@ -5,7 +5,7 @@ express = require 'express'
 socketIoClient = require 'socket.io-client'
 broadcastHub = require '..'
 
-class Client
+class TestClient
     constructor: (@server, cb) ->
         @messages = []
         @waiting = []
@@ -13,46 +13,48 @@ class Client
         @client = socketIoClient.connect("http://localhost:#{@server.port}", {
             'force new connection': true
         })
-        @client.on 'event', @processMessage
-        @client.on 'connect', cb
+        @client.on 'hubMessage', @processMessage
+        @client.on 'hubSubscribed', cb
         
     waitForMessage: (channel, message, cb) ->
         @waiting.push(arguments)
 
     processMessage: (message) =>
-        for [channel, body, cb] in @waiting
+        for wait in @waiting
+            [channel, body, cb] = wait
             if message.channel == channel && message.message == body
-                cb()
+                @waiting.splice(@waiting.indexOf(wait), 1) # Remove from list
+                return cb()
 
-    stop: () ->
+    stop: (cb) ->
+        if cb
+            @client.on 'disconnect', () ->
+                # Give the server some time to clean this up
+                setTimeout cb, 5
         @client.disconnect()
-
 
 common = module.exports =
     send: (channel, message) ->
         redisClient.publish channel, message
 
-    startServer: (cb) ->
+    startServer: () ->
         server = express()
         server.port = Math.floor(Math.random() * 10000) + 40000
         server.http = server.listen(server.port)
-        broadcastHub.listen server.http, (err) ->
-            return cb(err) if err
-            cb(null, server)
+        server.hub = broadcastHub.listen(server.http)
         return server
 
     stopServer: (server) ->
         server.http.close()
 
     start: (done) ->
-        server = common.startServer (err) ->
-            return done(err) if err
-            client = common.createClient server, (err) ->
-                done(err, server, client)
+        server = common.startServer()
+        client = common.createClient server, (err) ->
+            done(err, server, client)
 
     stop: (server, client) ->
         common.stopServer(server)
         client.stop()
 
     createClient: (server, cb) ->
-        return new Client(server, cb)
+        return new TestClient(server, cb)

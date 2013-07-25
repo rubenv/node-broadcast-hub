@@ -19,12 +19,12 @@ module.exports = (grunt) ->
                     bare: true
                 expand: true,
                 cwd: 'src',
-                src: ['*.coffee', '!client.coffee'],
+                src: ['*.coffee', '!client-side.coffee'],
                 dest: 'lib',
                 ext: '.js'
             client:
                 files:
-                    'broadcast-hub-client.js': ['src/client.coffee']
+                    'broadcast-hub-client.js': ['src/client-side.coffee']
 
         uglify:
             dist:
