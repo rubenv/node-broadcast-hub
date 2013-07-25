@@ -1,13 +1,17 @@
+var path = require('path');
 var express = require('express');
 var broadcastHub = require('..');
 
+// Create the express app (or skip this if you don't use express)
 var app = express();
-var server = require('http').createServer(app);
+
+// Sets up the example app, serves files from the project root
+app.use(express.static(path.join(__dirname, '..')));
+
+// Start the express app
+server = app.listen(3000);
+
+// Pass the http server to broadcastHub
 broadcastHub.listen(server);
 
-app.get('/', function (req, res) {
-    res.sendfile(__dirname + '/client.html');
-});
-
-app.listen(3000);
-console.log('Listening on http://localhost:3000/');
+console.log('Listening on http://localhost:3000/example/');
