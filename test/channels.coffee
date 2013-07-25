@@ -69,7 +69,7 @@ describe 'Channels', ->
                 # In event of a failure, socket.io will retry automatically,
                 # but not in this case, it's a clean shutdown.
                 
-                @server = common.startServer(port)
+                @server = common.startServer({ _port: port })
                 @client.connect()
 
                 calls = 0

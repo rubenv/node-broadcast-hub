@@ -3,7 +3,7 @@ socketIo = require 'socket.io'
 Client = require './client'
 
 class BroadcastHub
-    constructor: (@server) ->
+    constructor: (@server, @options = {}) ->
         # Clients are tracked in a hash, this gives us O(1) disconnects.
         @clients = {}
         @clientId = 0
@@ -12,6 +12,7 @@ class BroadcastHub
         @io = socketIo.listen(@server, {
             'log level': 1
         })
+        @io.set('authorization', @options.canConnect || false)
         @io.sockets.on 'connection', @onSocketConnect
 
     onSocketConnect: (socket) =>
@@ -24,6 +25,10 @@ class BroadcastHub
     disconnectAll: () ->
         client.disconnect() for id, client of @clients
         @clients = {}
+
+    canSubscribe: (client, channel, cb) ->
+        return cb(null, true) if !@options.canSubscribe
+        @options.canSubscribe(client.socket.handshake, cb)
 
     # Counting clients is O(n), but that's okay, it's a diagnostic thing for
     # testing anyway.

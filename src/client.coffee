@@ -14,7 +14,13 @@ class Client
             message: message
 
     onSubscribe: (channel, cb) =>
-        @redis.subscribe channel, cb
+        @hub.canSubscribe @, channel, (err, allowed) =>
+            return cb(err) if err
+            return cb('subscription refused') if !allowed
+
+            @redis.subscribe channel, (err) ->
+                return if !cb
+                return cb(err, channel)
 
     disconnect: () ->
         @socket.disconnect()

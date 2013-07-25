@@ -1,5 +1,5 @@
 BroadcastHub = require './hub'
 
 module.exports =
-    listen: (server) ->
-        return new BroadcastHub(server)
+    listen: (server, options) ->
+        return new BroadcastHub(server, options)

@@ -18,6 +18,7 @@ class BroadcastHubClient
         })
         @client.on 'hubMessage', @_processMessage
         @client.on 'disconnect', @_onDisconnected
+        @client.on 'error', @_onError
 
         @client.on 'connect', () =>
             # Resubscribe any previously-open channels
@@ -51,13 +52,20 @@ class BroadcastHubClient
     _onDisconnected: (reason) =>
         @emit('disconnected')
 
+    _onError: (err) =>
+        @emit('error', err)
+
     disconnect: (cb) ->
         @once 'disconnected', cb
         @client.disconnect()
 
     subscribe: (channel, cb) ->
-        @_channels.push(channel) if channel not in @_channels
-        @client.emit 'hubSubscribe', channel, cb
+        @client.emit 'hubSubscribe', channel, (err) =>
+            if err
+                cb(err) if cb
+                return
+            @_channels.push(channel) if channel not in @_channels
+            cb() if cb
 
 if typeof module != 'undefined'
     # Node.js

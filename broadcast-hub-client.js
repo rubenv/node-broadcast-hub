@@ -19,6 +19,7 @@
   BroadcastHubClient = (function() {
     function BroadcastHubClient(options) {
       this.options = options != null ? options : {};
+      this._onError = __bind(this._onError, this);
       this._onDisconnected = __bind(this._onDisconnected, this);
       this._processMessage = __bind(this._processMessage, this);
       this._listeners = {};
@@ -33,6 +34,7 @@
       });
       this.client.on('hubMessage', this._processMessage);
       this.client.on('disconnect', this._onDisconnected);
+      this.client.on('error', this._onError);
       return this.client.on('connect', function() {
         var channel, _i, _len, _ref, _results;
         _ref = _this._channels;
@@ -98,16 +100,31 @@
       return this.emit('disconnected');
     };
 
+    BroadcastHubClient.prototype._onError = function(err) {
+      return this.emit('error', err);
+    };
+
     BroadcastHubClient.prototype.disconnect = function(cb) {
       this.once('disconnected', cb);
       return this.client.disconnect();
     };
 
     BroadcastHubClient.prototype.subscribe = function(channel, cb) {
-      if (__indexOf.call(this._channels, channel) < 0) {
-        this._channels.push(channel);
-      }
-      return this.client.emit('hubSubscribe', channel, cb);
+      var _this = this;
+      return this.client.emit('hubSubscribe', channel, function(err) {
+        if (err) {
+          if (cb) {
+            cb(err);
+          }
+          return;
+        }
+        if (__indexOf.call(_this._channels, channel) < 0) {
+          _this._channels.push(channel);
+        }
+        if (cb) {
+          return cb();
+        }
+      });
     };
 
     return BroadcastHubClient;

@@ -46,6 +46,7 @@ module.exports = (grunt) ->
             spec:
                 options:
                     reporter: 'spec'
+                    slow: 150
 
     @registerTask 'default', ['test']
     @registerTask 'build', ['clean', 'coffee', 'jshint', 'uglify']

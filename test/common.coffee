@@ -36,11 +36,12 @@ common = module.exports =
     send: (channel, message) ->
         redisClient.publish channel, message
 
-    startServer: (port) ->
+    startServer: (options = {}) ->
         server = express()
-        server.port = port || Math.floor(Math.random() * 10000) + 40000
+        server.port = options._port || Math.floor(Math.random() * 10000) + 40000
         server.http = server.listen(server.port)
-        server.hub = broadcastHub.listen(server.http)
+        delete options._port # Don't pass this one to broadcastHub.
+        server.hub = broadcastHub.listen(server.http, options)
         return server
 
     stopServer: (server, cb) ->
@@ -53,8 +54,8 @@ common = module.exports =
             done(err, server, client)
 
     stop: (server, client) ->
-        common.stopServer(server)
-        client.stop()
+        common.stopServer(server) if server
+        client.stop() if client
 
     createClient: (server, cb) ->
         return new TestClient(server, cb)
