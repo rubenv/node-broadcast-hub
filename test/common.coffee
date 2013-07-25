@@ -5,16 +5,15 @@ express = require 'express'
 broadcastHub = require '..'
 BroadcastHubClient = require '../broadcast-hub-client'
 
-class TestClient
+class TestClient extends BroadcastHubClient
     constructor: (@server, cb) ->
-        @messages = []
-        @waiting = []
-
-        @client = new BroadcastHubClient({
+        super({
             server: "http://localhost:#{@server.port}"
         })
-        @client.on 'connected', cb
-        @client.on 'message', @processMessage
+        @waiting = []
+
+        @on 'connected', cb
+        @on 'message', @processMessage
         
     waitForMessage: (channel, message, cb) ->
         @waiting.push(arguments)
@@ -28,10 +27,10 @@ class TestClient
 
     stop: (cb) ->
         if cb
-            @client.on 'disconnected', () ->
+            @on 'disconnected', () ->
                 # Give the server some time to clean this up
                 setTimeout cb, 5
-        @client.disconnect()
+        @disconnect()
 
 common = module.exports =
     send: (channel, message) ->
