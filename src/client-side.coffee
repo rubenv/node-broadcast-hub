@@ -18,10 +18,12 @@ class BroadcastHubClient
         @client.on 'disconnect', @_onDisconnected
 
     on: (event, cb) ->
+        return if !cb
         @_listeners[event] = [] if !@_listeners[event]
         @_listeners[event].push(cb)
 
     once: (event, cb) ->
+        return if !cb
         wrapper = () ->
             cb.apply(@, arguments)
             @off(event, wrapper)
@@ -47,10 +49,7 @@ class BroadcastHubClient
             console.log arguments
 
     disconnect: (cb) ->
-        if cb
-            @client.once 'disconnected', () ->
-                console.log arguments
-                cb()
+        @once 'disconnected', cb
         @client.disconnect()
 
 if typeof module != 'undefined'

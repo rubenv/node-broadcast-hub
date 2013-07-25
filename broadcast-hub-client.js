@@ -34,6 +34,9 @@
     }
 
     BroadcastHubClient.prototype.on = function(event, cb) {
+      if (!cb) {
+        return;
+      }
       if (!this._listeners[event]) {
         this._listeners[event] = [];
       }
@@ -42,6 +45,9 @@
 
     BroadcastHubClient.prototype.once = function(event, cb) {
       var wrapper;
+      if (!cb) {
+        return;
+      }
       wrapper = function() {
         cb.apply(this, arguments);
         return this.off(event, wrapper);
@@ -84,12 +90,7 @@
     };
 
     BroadcastHubClient.prototype.disconnect = function(cb) {
-      if (cb) {
-        this.client.once('disconnected', function() {
-          console.log(arguments);
-          return cb();
-        });
-      }
+      this.once('disconnected', cb);
       return this.client.disconnect();
     };
 
