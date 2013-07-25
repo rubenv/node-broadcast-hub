@@ -2,33 +2,33 @@ assert = require 'assert'
 redis = require 'redis'
 redisClient = redis.createClient()
 express = require 'express'
-socketIoClient = require 'socket.io-client'
 broadcastHub = require '..'
+BroadcastHubClient = require '../broadcast-hub-client'
 
 class TestClient
     constructor: (@server, cb) ->
         @messages = []
         @waiting = []
 
-        @client = socketIoClient.connect("http://localhost:#{@server.port}", {
-            'force new connection': true
+        @client = new BroadcastHubClient({
+            server: "http://localhost:#{@server.port}"
         })
-        @client.on 'hubMessage', @processMessage
-        @client.on 'hubSubscribed', cb
+        @client.on 'connected', cb
+        @client.on 'message', @processMessage
         
     waitForMessage: (channel, message, cb) ->
         @waiting.push(arguments)
 
-    processMessage: (message) =>
+    processMessage: (channel, body) =>
         for wait in @waiting
-            [channel, body, cb] = wait
-            if message.channel == channel && message.message == body
+            [wchannel, wbody, cb] = wait
+            if channel == wchannel && body == wbody
                 @waiting.splice(@waiting.indexOf(wait), 1) # Remove from list
                 return cb()
 
     stop: (cb) ->
         if cb
-            @client.on 'disconnect', () ->
+            @client.on 'disconnected', () ->
                 # Give the server some time to clean this up
                 setTimeout cb, 5
         @client.disconnect()
