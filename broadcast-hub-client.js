@@ -22,7 +22,7 @@
       this.options = options != null ? options : {};
       this._onDisconnected = __bind(this._onDisconnected, this);
       this._processMessage = __bind(this._processMessage, this);
-      this.listeners = {};
+      this._listeners = {};
       this.client = io.connect(options.server, {
         'force new connection': true
       });
@@ -34,10 +34,10 @@
     }
 
     BroadcastHubClient.prototype.on = function(event, cb) {
-      if (!this.listeners[event]) {
-        this.listeners[event] = [];
+      if (!this._listeners[event]) {
+        this._listeners[event] = [];
       }
-      return this.listeners[event].push(cb);
+      return this._listeners[event].push(cb);
     };
 
     BroadcastHubClient.prototype.once = function(event, cb) {
@@ -50,19 +50,19 @@
     };
 
     BroadcastHubClient.prototype.off = function(event, cb) {
-      if (!this.listeners[event] || __indexOf.call(this.listeners[event], cb) < 0) {
+      if (!this._listeners[event] || __indexOf.call(this._listeners[event], cb) < 0) {
         return;
       }
-      return this.listeners[event].splice(this.listeners[event].indexOf(cb), 1);
+      return this._listeners[event].splice(this._listeners[event].indexOf(cb), 1);
     };
 
     BroadcastHubClient.prototype.emit = function() {
       var args, event, listener, _i, _len, _ref, _results;
       event = arguments[0], args = 2 <= arguments.length ? __slice.call(arguments, 1) : [];
-      if (!this.listeners[event]) {
+      if (!this._listeners[event]) {
         return;
       }
-      _ref = this.listeners[event];
+      _ref = this._listeners[event];
       _results = [];
       for (_i = 0, _len = _ref.length; _i < _len; _i++) {
         listener = _ref[_i];

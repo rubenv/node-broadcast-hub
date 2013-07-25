@@ -8,7 +8,7 @@ throw Error('No Socket.IO found, be sure to include it!') if !io
 
 class BroadcastHubClient
     constructor: (@options = {}) ->
-        @listeners = {}
+        @_listeners = {}
 
         @client = io.connect(options.server, {
             'force new connection': true
@@ -18,8 +18,8 @@ class BroadcastHubClient
         @client.on 'disconnect', @_onDisconnected
 
     on: (event, cb) ->
-        @listeners[event] = [] if !@listeners[event]
-        @listeners[event].push(cb)
+        @_listeners[event] = [] if !@_listeners[event]
+        @_listeners[event].push(cb)
 
     once: (event, cb) ->
         wrapper = () ->
@@ -28,12 +28,12 @@ class BroadcastHubClient
         @on(event, wrapper)
 
     off: (event, cb) ->
-        return if !@listeners[event] or cb not in @listeners[event]
-        @listeners[event].splice(@listeners[event].indexOf(cb), 1)
+        return if !@_listeners[event] or cb not in @_listeners[event]
+        @_listeners[event].splice(@_listeners[event].indexOf(cb), 1)
 
     emit: (event, args...) ->
-        return if !@listeners[event]
-        for listener in @listeners[event]
+        return if !@_listeners[event]
+        for listener in @_listeners[event]
             listener.apply(@, args)
 
     _processMessage: (message) =>
