@@ -3,17 +3,21 @@ redis = require 'redis'
 class Client
     constructor: (@hub, @id, @socket) ->
         @redis = redis.createClient()
-        @redis.on 'pmessage', @onPMessage
-        @redis.psubscribe '*', (err) =>
-            # TODO: if err
-            @socket.emit 'hubSubscribed'
+        @redis.on 'message', @onMessage
 
         @socket.on 'disconnect', @onDisconnect
+        @socket.on 'hubSubscribe', @onSubscribe
 
-    onPMessage: (pattern, channel, message) =>
+    onMessage: (channel, message) =>
         @socket.emit 'hubMessage',
             channel: channel
             message: message
+
+    onSubscribe: (channel, cb) =>
+        @redis.subscribe channel, cb
+
+    disconnect: () ->
+        @socket.disconnect()
 
     onDisconnect: () =>
         @hub.disconnect(@)

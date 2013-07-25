@@ -21,6 +21,10 @@ class BroadcastHub
     disconnect: (client) ->
         delete @clients[client.id]
 
+    disconnectAll: () ->
+        client.disconnect() for id, client of @clients
+        @clients = {}
+
     # Counting clients is O(n), but that's okay, it's a diagnostic thing for
     # testing anyway.
     Object.defineProperty @prototype, 'clientCount',

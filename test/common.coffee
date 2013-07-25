@@ -12,8 +12,8 @@ class TestClient extends BroadcastHubClient
         })
         @waiting = []
 
-        @on 'connected', cb
         @on 'message', @processMessage
+        @subscribe 'public-test', cb
         
     waitForMessage: (channel, message, cb) ->
         @waiting.push(arguments)
@@ -36,15 +36,16 @@ common = module.exports =
     send: (channel, message) ->
         redisClient.publish channel, message
 
-    startServer: () ->
+    startServer: (port) ->
         server = express()
-        server.port = Math.floor(Math.random() * 10000) + 40000
+        server.port = port || Math.floor(Math.random() * 10000) + 40000
         server.http = server.listen(server.port)
         server.hub = broadcastHub.listen(server.http)
         return server
 
-    stopServer: (server) ->
-        server.http.close()
+    stopServer: (server, cb) ->
+        server.hub.disconnectAll()
+        server.http.close(cb)
 
     start: (done) ->
         server = common.startServer()

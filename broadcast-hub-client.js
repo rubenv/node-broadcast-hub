@@ -18,20 +18,32 @@
 
   BroadcastHubClient = (function() {
     function BroadcastHubClient(options) {
-      var _this = this;
       this.options = options != null ? options : {};
       this._onDisconnected = __bind(this._onDisconnected, this);
       this._processMessage = __bind(this._processMessage, this);
       this._listeners = {};
-      this.client = io.connect(options.server, {
+      this._channels = [];
+      this.connect();
+    }
+
+    BroadcastHubClient.prototype.connect = function() {
+      var _this = this;
+      this.client = io.connect(this.options.server, {
         'force new connection': true
       });
       this.client.on('hubMessage', this._processMessage);
-      this.client.on('hubSubscribed', function() {
-        return _this.emit('connected');
-      });
       this.client.on('disconnect', this._onDisconnected);
-    }
+      return this.client.on('connect', function() {
+        var channel, _i, _len, _ref, _results;
+        _ref = _this._channels;
+        _results = [];
+        for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+          channel = _ref[_i];
+          _results.push(_this.subscribe(channel));
+        }
+        return _results;
+      });
+    };
 
     BroadcastHubClient.prototype.on = function(event, cb) {
       if (!cb) {
@@ -78,20 +90,24 @@
     };
 
     BroadcastHubClient.prototype._processMessage = function(message) {
-      this.emit('message', message.channel, message.message);
-      return this.emit("message:" + message.channel, message.message);
+      this.emit("message:" + message.channel, message.message);
+      return this.emit('message', message.channel, message.message);
     };
 
     BroadcastHubClient.prototype._onDisconnected = function(reason) {
-      this.emit('disconnected');
-      if (reason !== 'booted') {
-        return console.log(arguments);
-      }
+      return this.emit('disconnected');
     };
 
     BroadcastHubClient.prototype.disconnect = function(cb) {
       this.once('disconnected', cb);
       return this.client.disconnect();
+    };
+
+    BroadcastHubClient.prototype.subscribe = function(channel, cb) {
+      if (__indexOf.call(this._channels, channel) < 0) {
+        this._channels.push(channel);
+      }
+      return this.client.emit('hubSubscribe', channel, cb);
     };
 
     return BroadcastHubClient;

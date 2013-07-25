@@ -9,13 +9,19 @@ throw Error('No Socket.IO found, be sure to include it!') if !io
 class BroadcastHubClient
     constructor: (@options = {}) ->
         @_listeners = {}
+        @_channels = []
+        @connect()
 
-        @client = io.connect(options.server, {
+    connect: () ->
+        @client = io.connect(@options.server, {
             'force new connection': true
         })
         @client.on 'hubMessage', @_processMessage
-        @client.on 'hubSubscribed', () => @emit('connected')
         @client.on 'disconnect', @_onDisconnected
+
+        @client.on 'connect', () =>
+            # Resubscribe any previously-open channels
+            @subscribe(channel) for channel in @_channels
 
     on: (event, cb) ->
         return if !cb
@@ -39,18 +45,19 @@ class BroadcastHubClient
             listener.apply(@, args)
 
     _processMessage: (message) =>
-        @emit('message', message.channel, message.message)
         @emit("message:#{message.channel}", message.message)
+        @emit('message', message.channel, message.message)
 
     _onDisconnected: (reason) =>
         @emit('disconnected')
-        if reason != 'booted'
-            # TODO: Trigger reconnect
-            console.log arguments
 
     disconnect: (cb) ->
         @once 'disconnected', cb
         @client.disconnect()
+
+    subscribe: (channel, cb) ->
+        @_channels.push(channel) if channel not in @_channels
+        @client.emit 'hubSubscribe', channel, cb
 
 if typeof module != 'undefined'
     # Node.js
