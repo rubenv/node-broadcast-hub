@@ -1,0 +1,17 @@
+{
+  "name": "broadcast-hub",
+  "version": "0.0.0",
+  "main": "broadcast-hub-client.js",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "lib",
+    "src",
+    "example"
+  ],
+  "dependencies": {
+    "socket.io-client": "~0.9.16"
+  }
+}
