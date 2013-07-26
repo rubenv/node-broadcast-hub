@@ -1,6 +1,6 @@
 var path = require('path');
 var express = require('express');
-var broadcastHub = require('..');
+var broadcastHub = require('..'); // Use require('broadcast-hub') in your project.
 
 // Create the express app (or skip this if you don't use express)
 var app = express();

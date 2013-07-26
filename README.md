@@ -1,6 +1,119 @@
 # broadcast-hub - WebSockets backed by Redis pubsub.
 
-  Exposes redis pubsub channels over websockets.
+> Exposes redis pubsub channels over websockets.
+
+## Introduction
+
+The broadcast-hub module provides easy-to-use middleware for adding real-time notifications to your web applications. It is intended to be both easy to integrate (low effort) yet scalable.
+
+The hub consists of a number of broadcast channels to which clients can subscribe. Once subscribed, they'll receive any message posted to that channel.
+
+What it does:
+
+* Provide the needed Websocket handling (based on [socket.io](http://socket.io/)).
+* Provides a client-side library for subscribing to broadcast channels.
+* Uses [redis](http://redis.io/) as a pubsub mechanism to achieve scalability.
+* Allows authenticating clients and individual channels.
+* Automatic connection handling (including reconnecting on connection loss).
+
+## Getting started
+### Requirements
+You'll need a redis server on the backend. Redis takes care of all the message routing, broadcast-hub simply publishes those messages over websockets.
+
+### Server-side
+Add broadcast-hub to your project (backend components):
+
+```
+npm install --save broadcast-hub
+```
+
+You'll need to setup a broadcast-hub on the server. This can be a standalone component or part of your existing Node.JS backend.
+
+If you are using [Express](http://expressjs.com/):
+
+```
+var express = require('express');
+var broadcastHub = require('broadcast-hub');
+
+var app = express();
+// Do Express configuration
+var server = app.listen(3000);      // (1)
+broadcastHub.listen(server);        // (2)
+```
+
+1. When you call `app.listen`, the return value will be a `http.Server`, store this in a variable.
+2. Pass the `http.Server` to broadcast-hub. This will set up the needed socket.io listeners.
+
+A full example can be found in `example/server.js`.
+
+### Client-side
+Add broadcast-hub to your project (client-side components):
+
+```
+bower install --save broadcast-hub
+```
+
+Add the socket.io and broadcast-hub libraries to your app:
+
+```
+<head>
+    <!-- More stuff here -->
+    <script src="bower_components/socket.io-client/dist/socket.io.min.js"></script>
+    <script src="bower_components/broadcast-hub/broadcast-hub-client.min.js"></script>
+</head>
+```
+
+Then, in your client-side JavaScript, connect to the hub and subscribe to some channels:
+
+```
+var client = new BroadcastHubClient();
+c.subscribe('test');
+c.on('message:test', function (message) {
+	console.log(message);
+})
+```
+
+All received messages in the `test` channel will be output to the console.
+
+### Publishing messages
+Using any redis client, publish a message on the same channel and it'll get relayed to the clients.
+
+For instance, using the `redis-cli` client:
+
+```
+$ redis-cli 
+redis 127.0.0.1:6379> publish test "Test message"
+```
+
+This will result in `Test message` showing up in the browser console.
+
+There are no special requirements for publishing messages, so you can use any redis client for publishing, such as [node-redis (Node.JS)](https://github.com/mranney/node_redis) or [predis (PHP)](https://github.com/nrk/predis). This is by design: it should be as trivial as possible to publish messages.
+
+## Scalability
+The architecture of broadcast-hub is deliberatly kept simple to make scaling possible: as much work as possible is delegated to redis.
+
+If you start to run into the limits of Node.JS:
+
+* Add more Node.JS instances to which clients can connect.
+* Use a load balancer to spread clients across these backends instances.
+* There is no requirement for pinning clients to backend instances. Clients will automatically reconnect if one of the backends goes down and restore all subscriptions. This should be transparent.
+
+If you start to run into the limits of redis:
+
+* Use [master/slave replication](http://redis.io/topics/replication) to add more redis tiers.
+
+Be sure to have sufficiently high connection limits set up. Each client requires two connections: one from the browser to Node.JS and one from Node.js to redis. Add another TCP connection if you have nginx as a reverse-proxy (not strictly needed, though recommended to offload compression and encryption).
+
+## TODO
+* Document authentication
+* Document channel authentication
+* Add a convenience API for publishing messages
+
+## Contributing
+All code lives in the `src` folder and is written in CoffeeScript. Try to stick to the style conventions used in existing code.
+
+Tests can be run using `grunt test`. A convenience command to automatically run the tests is also available: `grunt watch`. Please add test cases when adding new functionality: this will prove that it works and ensure that it will keep working in the future.
+
     
 ## License 
 
