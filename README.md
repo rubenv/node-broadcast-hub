@@ -105,6 +105,7 @@ If you start to run into the limits of redis:
 Be sure to have sufficiently high connection limits set up. Each client requires two connections: one from the browser to Node.JS and one from Node.js to redis. Add another TCP connection if you have nginx as a reverse-proxy (not strictly needed, though recommended to offload compression and encryption).
 
 ## TODO
+* Document client-side API
 * Document authentication
 * Document channel authentication
 * Add a convenience API for publishing messages
