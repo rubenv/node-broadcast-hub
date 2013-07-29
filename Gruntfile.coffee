@@ -17,10 +17,10 @@ module.exports = (grunt) ->
             server:
                 options:
                     bare: true
-                expand: true,
-                cwd: 'src',
-                src: ['*.coffee', '!client-side.coffee'],
-                dest: 'lib',
+                expand: true
+                cwd: 'src'
+                src: ['*.coffee', '!client-side.coffee']
+                dest: 'lib'
                 ext: '.js'
             client:
                 files:
