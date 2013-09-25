@@ -31,7 +31,7 @@ You'll need to setup a broadcast-hub on the server. This can be a standalone com
 
 If you are using [Express](http://expressjs.com/):
 
-```
+```js
 var express = require('express');
 var broadcastHub = require('broadcast-hub');
 
@@ -55,7 +55,7 @@ bower install --save broadcast-hub
 
 Add the socket.io and broadcast-hub libraries to your app:
 
-```
+```html
 <head>
     <!-- More stuff here -->
     <script src="bower_components/socket.io-client/dist/socket.io.min.js"></script>
@@ -65,7 +65,7 @@ Add the socket.io and broadcast-hub libraries to your app:
 
 Then, in your client-side JavaScript, connect to the hub and subscribe to some channels:
 
-```
+```js
 var client = new BroadcastHubClient();
 c.subscribe('test');
 c.on('message:test', function (message) {
@@ -89,6 +89,24 @@ This will result in `Test message` showing up in the browser console.
 
 There are no special requirements for publishing messages, so you can use any redis client for publishing, such as [node-redis (Node.JS)](https://github.com/mranney/node_redis) or [predis (PHP)](https://github.com/nrk/predis). This is by design: it should be as trivial as possible to publish messages.
 
+From Node.JS, use something like this:
+
+```js
+var redis = require('redis');
+var client = redis.createClient();
+client.publish('test', 'Test message');
+```
+
+There's also a convenience method defined on the hub object that's returned when calling `listen`:
+
+```js
+var hub = broadcastHub.listen(server);
+hub.publish('test', 'Test message');
+```
+
+You can optionally pass a completion callback as the third argument to this function.
+
+
 ## Scalability
 The architecture of broadcast-hub is deliberatly kept simple to make scaling possible: as much work as possible is delegated to redis.
 
@@ -104,11 +122,37 @@ If you start to run into the limits of redis:
 
 Be sure to have sufficiently high connection limits set up. Each client requires two connections: one from the browser to Node.JS and one from Node.js to redis. Add another TCP connection if you have nginx as a reverse-proxy (not strictly needed, though recommended to offload compression and encryption).
 
-## TODO
-* Document client-side API
-* Document authentication
-* Document channel authentication
-* Add a convenience API for publishing messages
+## Configuration
+You can pass an options object to the `listen` call:
+
+```js
+broadcastHub.listen(server, {
+    /* Options here */
+});
+```
+
+### `canConnect`
+**Type:** `function (data, cb)`
+
+A function that can be used to determine whether or not the connecting client is allowed to connect to the broadcast hub. The passed `data` object is described on this page: [https://github.com/LearnBoost/socket.io/wiki/Authorizing](https://github.com/LearnBoost/socket.io/wiki/Authorizing).
+
+The result of this authorization check should be passed to the callback `cb`: This function takes two arguments: an error or a boolean value.
+
+Example:
+
+```js
+broadcastHub.listen(server, {
+	canConnect: function (data, cb) {
+	    // Do some database lookups here
+	    cb(null, true);
+	}    
+});
+```
+
+### `canSubscribe`
+**Type:** `function (data, channel, cb)`
+
+Similar to `canConnect`, except that this function decides whether or not the client can subscribe to the requested channel.
 
 ## Contributing
 All code lives in the `src` folder and is written in CoffeeScript. Try to stick to the style conventions used in existing code.

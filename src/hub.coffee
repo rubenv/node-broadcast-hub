@@ -1,3 +1,4 @@
+redis = require 'redis'
 socketIo = require 'socket.io'
 
 Client = require './client'
@@ -28,7 +29,11 @@ class BroadcastHub
 
     canSubscribe: (client, channel, cb) ->
         return cb(null, true) if !@options.canSubscribe
-        @options.canSubscribe(client.socket.handshake, cb)
+        @options.canSubscribe(client.socket.handshake, channel, cb)
+
+    publish: (channel, message, cb) ->
+        @publishClient = redis.createClient() if !@publishClient
+        @publishClient.publish(channel, message, cb)
 
     # Counting clients is O(n), but that's okay, it's a diagnostic thing for
     # testing anyway.

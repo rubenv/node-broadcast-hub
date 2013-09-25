@@ -33,7 +33,7 @@ describe 'Authentication', ->
     it 'Server can authenticate channels', (done) ->
         calls = 0
         options =
-            canSubscribe: (data, cb) ->
+            canSubscribe: (data, channel, cb) ->
                 calls++
                 cb(null, true)
         @server = common.startServer(options)
@@ -46,7 +46,7 @@ describe 'Authentication', ->
     it 'Server can refuse channel subscriptions', (done) ->
         calls = 0
         options =
-            canSubscribe: (data, cb) ->
+            canSubscribe: (data, channel, cb) ->
                 calls++
                 cb(null, false)
         @server = common.startServer(options)
