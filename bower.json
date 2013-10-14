@@ -11,6 +11,6 @@
     "example"
   ],
   "dependencies": {
-    "socket.io-client": "~0.9.16"
+    "sockjs": "~0.3.4"
   }
 }

@@ -1,12 +1,9 @@
-common = require './common'
-assert = require 'assert'
-
 describe 'Client', ->
     beforeEach (done) ->
         common.start (err, @server, @client) => done(err)
 
-    afterEach ->
-        common.stop(@server, @client)
+    afterEach (done) ->
+        common.stop(@server, @client, done)
 
     it 'Client can listen for all messages', (done) ->
         @client.on 'message', () -> done()

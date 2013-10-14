@@ -1,21 +1,24 @@
 root = @ # In the browser, this will be window
 
-io = root.io
-if !io && typeof require != 'undefined'
-    io = require 'socket.io-client'
+SockJS = root.SockJS
 
-throw Error('No Socket.IO found, be sure to include it!') if !io
+throw Error('No SockJS found, be sure to include it!') if !SockJS
 
 class BroadcastHubClient
     constructor: (@options = {}) ->
         @_listeners = {}
         @_channels = []
+        @_queue = []
+        @_connected = false
+        @_seq = 0
         @connect()
 
     connect: () ->
-        @client = io.connect(@options.server, {
-            'force new connection': true
-        })
+        @client = new SockJS(@options.server || "/sockets")
+        @client.onopen = @_onConnected
+        @client.onclose = @_onDisconnected
+        @client.onmessage = @_processMessage
+        ###
         @client.on 'hubMessage', @_processMessage
         @client.on 'disconnect', @_onDisconnected
         @client.on 'error', @_onError
@@ -23,6 +26,7 @@ class BroadcastHubClient
         @client.on 'connect', () =>
             # Resubscribe any previously-open channels
             @subscribe(channel) for channel in @_channels
+        ###
 
     on: (event, cb) ->
         return if !cb
@@ -46,10 +50,20 @@ class BroadcastHubClient
             listener.apply(@, args)
 
     _processMessage: (message) =>
-        @emit("message:#{message.channel}", message.message)
-        @emit('message', message.channel, message.message)
+        data = JSON.parse(message.data)
+        if data.type == 'callback'
+            @emit "_callback:#{data.seq}", data.err, data.data
+        else
+            @emit("message:#{data.channel}", data.message)
+            @emit('message', data.channel, data.message)
 
-    _onDisconnected: (reason) =>
+    _onConnected: () =>
+        @_connected = true
+        for msg in @_queue
+            @client.send(JSON.stringify(msg))
+        @_queue = []
+
+    _onDisconnected: () =>
         @emit('disconnected')
 
     _onError: (err) =>
@@ -57,10 +71,23 @@ class BroadcastHubClient
 
     disconnect: (cb) ->
         @once 'disconnected', cb
-        @client.disconnect()
+        @send {
+            message: 'disconnect'
+        }, () =>
+            @client.close()
+
+    send: (data = {}, cb) ->
+        if cb
+            data._seq = @_seq++
+            @once "_callback:#{data._seq}", cb
+        if !@_connected
+            @_queue.push(data)
+        else
+            @client.send(JSON.stringify(data))
+        return data._seq
 
     subscribe: (channel, cb) ->
-        @client.emit 'hubSubscribe', channel, (err) =>
+        @send { message: 'hubSubscribe', channel: channel }, (err) =>
             if err
                 cb(err) if cb
                 return

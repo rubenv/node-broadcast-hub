@@ -1,5 +1,5 @@
 redis = require 'redis'
-socketIo = require 'socket.io'
+sockjs = require 'sockjs'
 
 Client = require './client'
 
@@ -9,12 +9,17 @@ class BroadcastHub
         @clients = {}
         @clientId = 0
 
-        # Open a socket.io listener and listen for new clients.
-        @io = socketIo.listen(@server, {
-            'log level': 1
+        # Channels
+        @channels = {}
+
+        # Open a sockjs listener and listen for new clients.
+        @socket = sockjs.createServer({
+            log: @options.log
         })
-        @io.set('authorization', @options.canConnect || false)
-        @io.sockets.on 'connection', @onSocketConnect
+        @socket.installHandlers(@server, { prefix: @options.prefix || '/sockets' })
+        @socket.on 'connection', @onSocketConnect
+        #@io.set('authorization', @options.canConnect || false)
+        #@io.sockets.on 'connection', @onSocketConnect
 
     onSocketConnect: (socket) =>
         @clients[@clientId] = new Client(@, @clientId, socket)

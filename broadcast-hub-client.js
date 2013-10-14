@@ -1,19 +1,15 @@
 (function() {
-  var BroadcastHubClient, io, root,
+  var BroadcastHubClient, SockJS, root,
     __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
     __indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; },
     __slice = [].slice;
 
   root = this;
 
-  io = root.io;
+  SockJS = root.SockJS;
 
-  if (!io && typeof require !== 'undefined') {
-    io = require('socket.io-client');
-  }
-
-  if (!io) {
-    throw Error('No Socket.IO found, be sure to include it!');
+  if (!SockJS) {
+    throw Error('No SockJS found, be sure to include it!');
   }
 
   BroadcastHubClient = (function() {
@@ -21,30 +17,31 @@
       this.options = options != null ? options : {};
       this._onError = __bind(this._onError, this);
       this._onDisconnected = __bind(this._onDisconnected, this);
+      this._onConnected = __bind(this._onConnected, this);
       this._processMessage = __bind(this._processMessage, this);
       this._listeners = {};
       this._channels = [];
+      this._queue = [];
+      this._connected = false;
+      this._seq = 0;
       this.connect();
     }
 
     BroadcastHubClient.prototype.connect = function() {
-      var _this = this;
-      this.client = io.connect(this.options.server, {
-        'force new connection': true
-      });
-      this.client.on('hubMessage', this._processMessage);
-      this.client.on('disconnect', this._onDisconnected);
-      this.client.on('error', this._onError);
-      return this.client.on('connect', function() {
-        var channel, _i, _len, _ref, _results;
-        _ref = _this._channels;
-        _results = [];
-        for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-          channel = _ref[_i];
-          _results.push(_this.subscribe(channel));
-        }
-        return _results;
-      });
+      this.client = new SockJS(this.options.server || "/sockets");
+      this.client.onopen = this._onConnected;
+      this.client.onclose = this._onDisconnected;
+      return this.client.onmessage = this._processMessage;
+      /*
+      @client.on 'hubMessage', @_processMessage
+      @client.on 'disconnect', @_onDisconnected
+      @client.on 'error', @_onError
+      
+      @client.on 'connect', () =>
+          # Resubscribe any previously-open channels
+          @subscribe(channel) for channel in @_channels
+      */
+
     };
 
     BroadcastHubClient.prototype.on = function(event, cb) {
@@ -92,11 +89,28 @@
     };
 
     BroadcastHubClient.prototype._processMessage = function(message) {
-      this.emit("message:" + message.channel, message.message);
-      return this.emit('message', message.channel, message.message);
+      var data;
+      data = JSON.parse(message.data);
+      if (data.type === 'callback') {
+        return this.emit("_callback:" + data.seq, data.err, data.data);
+      } else {
+        this.emit("message:" + data.channel, data.message);
+        return this.emit('message', data.channel, data.message);
+      }
     };
 
-    BroadcastHubClient.prototype._onDisconnected = function(reason) {
+    BroadcastHubClient.prototype._onConnected = function() {
+      var msg, _i, _len, _ref;
+      this._connected = true;
+      _ref = this._queue;
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        msg = _ref[_i];
+        this.client.send(JSON.stringify(msg));
+      }
+      return this._queue = [];
+    };
+
+    BroadcastHubClient.prototype._onDisconnected = function() {
       return this.emit('disconnected');
     };
 
@@ -105,13 +119,37 @@
     };
 
     BroadcastHubClient.prototype.disconnect = function(cb) {
+      var _this = this;
       this.once('disconnected', cb);
-      return this.client.disconnect();
+      return this.send({
+        message: 'disconnect'
+      }, function() {
+        return _this.client.close();
+      });
+    };
+
+    BroadcastHubClient.prototype.send = function(data, cb) {
+      if (data == null) {
+        data = {};
+      }
+      if (cb) {
+        data._seq = this._seq++;
+        this.once("_callback:" + data._seq, cb);
+      }
+      if (!this._connected) {
+        this._queue.push(data);
+      } else {
+        this.client.send(JSON.stringify(data));
+      }
+      return data._seq;
     };
 
     BroadcastHubClient.prototype.subscribe = function(channel, cb) {
       var _this = this;
-      return this.client.emit('hubSubscribe', channel, function(err) {
+      return this.send({
+        message: 'hubSubscribe',
+        channel: channel
+      }, function(err) {
         if (err) {
           if (cb) {
             cb(err);

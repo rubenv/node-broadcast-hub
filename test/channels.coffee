@@ -1,6 +1,3 @@
-assert = require 'assert'
-common = require './common'
-
 describe 'Channels', ->
     beforeEach (done) ->
         common.start (err, @server, @client) => done(err)

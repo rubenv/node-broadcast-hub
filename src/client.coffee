@@ -5,13 +5,34 @@ class Client
         @redis = redis.createClient()
         @redis.on 'message', @onMessage
 
-        @socket.on 'disconnect', @onDisconnect
-        @socket.on 'hubSubscribe', @onSubscribe
+        @socket.on 'close', @onDisconnect
+        #@socket.on 'hubSubscribe', @onSubscribe
+
+        @socket.on 'data', @onData
+
+    callback: (id) =>
+        return (err, data) =>
+            @socket.write(JSON.stringify({
+                type: 'callback'
+                seq: id
+                err: err
+                data: data
+            }))
+
+    onData: (data) =>
+        obj = JSON.parse(data)
+
+        if obj.message == 'hubSubscribe'
+            @onSubscribe obj.channel, @callback(obj._seq)
+        else if obj.message == 'disconnect'
+            @disconnect()
 
     onMessage: (channel, message) =>
-        @socket.emit 'hubMessage',
+        @socket.write(JSON.stringify({
+            type: 'message'
             channel: channel
             message: message
+        }))
 
     onSubscribe: (channel, cb) =>
         @hub.canSubscribe @, channel, (err, allowed) =>
@@ -23,10 +44,14 @@ class Client
                 return cb(err, channel)
 
     disconnect: () ->
-        @socket.disconnect()
+        @onDisconnect()
+        @socket.close()
 
     onDisconnect: () =>
-        @hub.disconnect(@)
-        @redis.quit()
+        @hub.disconnect(@) if @hub
+        @redis.quit() if @redis
+
+        @hub = null
+        @redis = null
 
 module.exports = Client
