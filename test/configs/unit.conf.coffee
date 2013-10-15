@@ -10,8 +10,7 @@ module.exports = (config) ->
         ]
         frameworks: ['chai', 'mocha']
         urlRoot: '/karma/'
-        #browsers: ['PhantomJS']
-        browsers: ['Chrome']
+        browsers: ['Firefox']
         reporters: ['dots']
         port: 9877
         singleRun: true

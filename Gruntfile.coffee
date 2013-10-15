@@ -60,6 +60,7 @@ module.exports = (grunt) ->
                 configFile: 'test/configs/unit.conf.coffee'
                 background: true
                 singleRun: false
+                browsers: ['PhantomJS']
 
     server = null
 
