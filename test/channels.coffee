@@ -56,11 +56,13 @@ describe 'Channels', ->
                 common.send('public-test', 'test') # Will arrive at both clients
 
     it 'Client resubscribes to channels after disconnect', (done) ->
+        @timeout(5000)
+
         port = @server.port
         @client.subscribe 'public-channel', (err) =>
             return done(err) if err
 
-            common.stopServer @server, (err) =>
+            common.stopServer (err) =>
                 return done(err) if err
                 # Start new server and manually trigger a reconnect
                 # In event of a failure, socket.io will retry automatically,

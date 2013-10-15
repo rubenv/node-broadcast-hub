@@ -2,9 +2,11 @@ spawn = require('child_process').spawn
 
 fs = require 'fs'
 redis = require 'redis'
-redisClient = redis.createClient()
+autoquit = require 'autoquit'
 express = require 'express'
 superagent = require 'superagent'
+
+redisClient = redis.createClient()
 
 pid = __dirname + '/hub.pid'
 
@@ -44,4 +46,5 @@ app.post '/clients', (req, res, next) ->
             res.json(result.body)
 
 console.log '## Starting test coordinator'
-app.listen(9876)
+http = app.listen(9876)
+http.autoQuit()

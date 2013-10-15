@@ -1,3 +1,4 @@
+fs = require 'fs'
 spawn = require('child_process').spawn
 
 module.exports = (grunt) ->
@@ -62,13 +63,14 @@ module.exports = (grunt) ->
                 singleRun: false
                 browsers: ['PhantomJS']
 
-    server = null
-
     @registerTask 'testserver', 'Test coordination server', () ->
         done = @async()
 
-        # Kill old instance
-        server.kill() if server
+        pid = __dirname + '/test/server/server.pid'
+        if fs.existsSync(pid)
+            try
+                process.kill(fs.readFileSync(pid, 'utf8'))
+            fs.unlinkSync(pid)
 
         # Start new server
         signalled = false
@@ -81,6 +83,7 @@ module.exports = (grunt) ->
             grunt.log.write(data.toString())
         server.stderr.on 'data', (data) ->
             grunt.log.error(data.toString())
+        fs.writeFileSync(pid, server.pid)
 
     @renameTask 'watch', 'doWatch'
 

@@ -15,16 +15,11 @@ class BroadcastHubClient
         @connect()
 
     connect: () ->
-        #throw new Error("Already have a client!") if @client
+        throw new Error("Already have a client!") if @client
         @client = new SockJS(@options.server || "/sockets")
         @client.onopen = @_onConnected
         @client.onclose = @_onDisconnected
         @client.onmessage = @_processMessage
-        ###
-        @client.on 'error', @_onError
-
-        @client.on 'connect', () =>
-        ###
 
     on: (event, cb) ->
         return if !cb
@@ -56,6 +51,7 @@ class BroadcastHubClient
             @emit('message', data.channel, data.message)
 
     _onConnected: () =>
+        @_shuttingDown = false
         @_connected = true
         for msg in @_queue
             @client.send(JSON.stringify(msg))
@@ -65,6 +61,11 @@ class BroadcastHubClient
         @subscribe(channel) for channel in @_channels
 
     _onDisconnected: () =>
+        @client.onopen = null
+        @client.onclose = null
+        @client.onmessage = null
+        @client = null
+        @_connected = false
         @emit('disconnected')
 
         if !@_shuttingDown
@@ -72,6 +73,9 @@ class BroadcastHubClient
 
     disconnect: (cb) ->
         @_shuttingDown = true
+        if !@_connected
+            cb() if cb
+            return
         @once 'disconnected', cb
         @send {
             message: 'disconnect'

@@ -28,16 +28,13 @@
     }
 
     BroadcastHubClient.prototype.connect = function() {
+      if (this.client) {
+        throw new Error("Already have a client!");
+      }
       this.client = new SockJS(this.options.server || "/sockets");
       this.client.onopen = this._onConnected;
       this.client.onclose = this._onDisconnected;
       return this.client.onmessage = this._processMessage;
-      /*
-      @client.on 'error', @_onError
-      
-      @client.on 'connect', () =>
-      */
-
     };
 
     BroadcastHubClient.prototype.on = function(event, cb) {
@@ -97,6 +94,7 @@
 
     BroadcastHubClient.prototype._onConnected = function() {
       var channel, msg, _i, _j, _len, _len1, _ref, _ref1, _results;
+      this._shuttingDown = false;
       this._connected = true;
       _ref = this._queue;
       for (_i = 0, _len = _ref.length; _i < _len; _i++) {
@@ -114,6 +112,11 @@
     };
 
     BroadcastHubClient.prototype._onDisconnected = function() {
+      this.client.onopen = null;
+      this.client.onclose = null;
+      this.client.onmessage = null;
+      this.client = null;
+      this._connected = false;
       this.emit('disconnected');
       if (!this._shuttingDown) {
         return this.connect();
@@ -123,6 +126,12 @@
     BroadcastHubClient.prototype.disconnect = function(cb) {
       var _this = this;
       this._shuttingDown = true;
+      if (!this._connected) {
+        if (cb) {
+          cb();
+        }
+        return;
+      }
       this.once('disconnected', cb);
       return this.send({
         message: 'disconnect'

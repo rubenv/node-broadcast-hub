@@ -21,11 +21,7 @@ class TestClient extends BroadcastHubClient
                 return cb()
 
     stop: (cb) ->
-        if cb
-            @on 'disconnected', () ->
-                # Give the server some time to clean this up
-                setTimeout cb, 5
-        @disconnect()
+        @disconnect(cb)
 
 callCoordinator = (action, data, cb) ->
     if !cb
@@ -42,7 +38,6 @@ callCoordinator = (action, data, cb) ->
                 cb(null, res.body)
 
 clients = []
-server = null
 
 window.common = common =
     send: (channel, message) ->
@@ -55,22 +50,22 @@ window.common = common =
             options = {}
         callCoordinator "start", options, cb
 
-    stopServer: (server, cb) ->
+    stopServer: (cb) ->
         callCoordinator "stop", cb
 
     start: (done) ->
-        common.startServer (err, s) ->
+        common.startServer (err, server) ->
             return done(err) if err
-            server = s
-            common.createClient server, (err, c) ->
-                client = c
+            common.createClient server, (err, client) ->
                 done(err, server, client)
 
     stop: (done) ->
-        for client in clients
-            client.stop()
-        clients = []
-        common.stopServer(server, done)
+        stopClient = (client, cb) ->
+            client.stop(cb)
+
+        async.each clients, stopClient, (err) ->
+            clients = []
+            common.stopServer(done)
 
     createClient: (server, cb) ->
         client = new TestClient(server, cb)
