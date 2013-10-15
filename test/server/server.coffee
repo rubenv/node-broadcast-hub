@@ -1,43 +1,47 @@
+spawn = require('child_process').spawn
+
+fs = require 'fs'
 redis = require 'redis'
 redisClient = redis.createClient()
 express = require 'express'
-broadcastHub = require '../..'
+superagent = require 'superagent'
 
-http = null
-server = null
-hub = null
+pid = __dirname + '/hub.pid'
 
 app = express()
 app.use(express.json())
 
-stopServer = (cb) ->
-    return cb() if !http
-    http.close(cb)
-    http = null
+stopServer = () ->
+    if fs.existsSync(pid)
+        try
+            process.kill(fs.readFileSync(pid, 'utf8'))
+        fs.unlinkSync(pid)
 
 app.post '/start', (req, res, next) ->
-    stopServer (err) ->
-        return next(err) if err
-        server = express()
-        http = server.listen(9875)
-        hub = broadcastHub.listen(http, {
-            log: (level, msg) ->
-                if /SockJS v.\..\.. bound to/.test(msg)
-                    res.json 'OK'
-                #console.log "#{level}: #{msg}"
-        })
+    stopServer()
+
+    server = spawn 'coffee', [__dirname + '/hub.coffee'], { stdio: ['ignore', 'pipe', 'pipe' ] }
+    server.stdout.on 'data', (data) ->
+        if /SockJS v.\..+\..+ bound to/.test(data.toString())
+            res.json 'OK'
+        #console.log data.toString()
+    server.stderr.on 'data', (data) ->
+        console.error data.toString()
+    fs.writeFileSync(pid, server.pid)
 
 app.post '/sendMessage', (req, res, next) ->
     redisClient.publish req.body.channel, req.body.message, () ->
         res.json 'OK'
 
 app.post '/stop', (req, res, next) ->
-    http.close() if http
-    http = null
+    stopServer()
     res.json 'OK'
 
 app.post '/clients', (req, res, next) ->
-    res.json(hub.clientCount)
+    superagent
+        .get("http://localhost:9875/clients")
+        .end (result) ->
+            res.json(result.body)
 
 console.log '## Starting test coordinator'
 app.listen(9876)

@@ -2,8 +2,7 @@ describe 'Client', ->
     beforeEach (done) ->
         common.start (err, @server, @client) => done(err)
 
-    afterEach (done) ->
-        common.stop(@server, @client, done)
+    afterEach(common.stop)
 
     it 'Client can listen for all messages', (done) ->
         @client.on 'message', () -> done()
@@ -67,3 +66,7 @@ describe 'Client', ->
         @client.on 'message', handler
 
         common.send('public-test', 'test')
+
+    it 'Will retry connection after connection failure'
+    it 'Waits for a certain time to retry the connection'
+    it 'Gives up on the connection after a number of tries'

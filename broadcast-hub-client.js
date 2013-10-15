@@ -15,7 +15,6 @@
   BroadcastHubClient = (function() {
     function BroadcastHubClient(options) {
       this.options = options != null ? options : {};
-      this._onError = __bind(this._onError, this);
       this._onDisconnected = __bind(this._onDisconnected, this);
       this._onConnected = __bind(this._onConnected, this);
       this._processMessage = __bind(this._processMessage, this);
@@ -23,6 +22,7 @@
       this._channels = [];
       this._queue = [];
       this._connected = false;
+      this._shuttingDown = false;
       this._seq = 0;
       this.connect();
     }
@@ -33,13 +33,9 @@
       this.client.onclose = this._onDisconnected;
       return this.client.onmessage = this._processMessage;
       /*
-      @client.on 'hubMessage', @_processMessage
-      @client.on 'disconnect', @_onDisconnected
       @client.on 'error', @_onError
       
       @client.on 'connect', () =>
-          # Resubscribe any previously-open channels
-          @subscribe(channel) for channel in @_channels
       */
 
     };
@@ -100,26 +96,33 @@
     };
 
     BroadcastHubClient.prototype._onConnected = function() {
-      var msg, _i, _len, _ref;
+      var channel, msg, _i, _j, _len, _len1, _ref, _ref1, _results;
       this._connected = true;
       _ref = this._queue;
       for (_i = 0, _len = _ref.length; _i < _len; _i++) {
         msg = _ref[_i];
         this.client.send(JSON.stringify(msg));
       }
-      return this._queue = [];
+      this._queue = [];
+      _ref1 = this._channels;
+      _results = [];
+      for (_j = 0, _len1 = _ref1.length; _j < _len1; _j++) {
+        channel = _ref1[_j];
+        _results.push(this.subscribe(channel));
+      }
+      return _results;
     };
 
     BroadcastHubClient.prototype._onDisconnected = function() {
-      return this.emit('disconnected');
-    };
-
-    BroadcastHubClient.prototype._onError = function(err) {
-      return this.emit('error', err);
+      this.emit('disconnected');
+      if (!this._shuttingDown) {
+        return this.connect();
+      }
     };
 
     BroadcastHubClient.prototype.disconnect = function(cb) {
       var _this = this;
+      this._shuttingDown = true;
       this.once('disconnected', cb);
       return this.send({
         message: 'disconnect'

@@ -2,8 +2,7 @@ describe 'Channels', ->
     beforeEach (done) ->
         common.start (err, @server, @client) => done(err)
 
-    afterEach (done) ->
-        common.stop(@server, @client, done)
+    afterEach(common.stop)
 
     it 'Clients can subscribe to channels', (done) ->
         @client.subscribe('test', done)
@@ -61,14 +60,14 @@ describe 'Channels', ->
         @client.subscribe 'public-channel', (err) =>
             return done(err) if err
 
-            common.stopServer @server, () =>
+            common.stopServer @server, (err) =>
+                return done(err) if err
                 # Start new server and manually trigger a reconnect
                 # In event of a failure, socket.io will retry automatically,
                 # but not in this case, it's a clean shutdown.
                 
-                @server = common.startServer () =>
-                    @client.connect()
-
+                common.startServer (err, @server) =>
+                    return done(err) if err
                     calls = 0
                     @client.on 'message', () ->
                         calls++

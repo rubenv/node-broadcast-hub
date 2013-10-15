@@ -41,6 +41,7 @@ callCoordinator = (action, data, cb) ->
             else
                 cb(null, res.body)
 
+clients = []
 server = null
 
 window.common = common =
@@ -61,15 +62,20 @@ window.common = common =
         common.startServer (err, s) ->
             return done(err) if err
             server = s
-            common.createClient server, (err, client) ->
+            common.createClient server, (err, c) ->
+                client = c
                 done(err, server, client)
 
-    stop: (server, client, done) ->
-        client.stop() if client
+    stop: (done) ->
+        for client in clients
+            client.stop()
+        clients = []
         common.stopServer(server, done)
 
     createClient: (server, cb) ->
-        return new TestClient(server, cb)
+        client = new TestClient(server, cb)
+        clients.push(client)
+        return client
 
     clientCount: (cb) ->
         callCoordinator "clients", cb

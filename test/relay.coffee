@@ -2,8 +2,7 @@ describe 'Relay', ->
     beforeEach (done) ->
         common.start (err, @server, @client) => done(err)
 
-    afterEach (done) ->
-        common.stop(@server, @client, done)
+    afterEach(common.stop)
 
     it 'A redis message is relayed to the client', (done) ->
         @client.waitForMessage('public-test', 'test', done)
@@ -20,28 +19,32 @@ describe 'Relay', ->
             ], done
 
     it 'Server handles disconnects', (done) ->
-        common.createClient @server, (err, client2) =>
-            return done(err) if err
+        common.clientCount (err, count) =>
+            assert.equal(count, 1, 'After start')
+            common.createClient @server, (err, client2) =>
+                return done(err) if err
 
-            common.clientCount (err, count) =>
-                assert.equal(count, 2, 'After connect')
+                common.clientCount (err, count) =>
+                    assert.equal(count, 2, 'After connect')
 
-                common.send('public-test', 'test')
+                    common.send('public-test', 'test')
 
-                async.parallel [
-                    (cb) => @client.waitForMessage('public-test', 'test', cb)
-                    (cb) => client2.waitForMessage('public-test', 'test', cb)
-                ], (err) =>
-                    return done(err) if err
-
-                    client2.stop (err) =>
+                    async.parallel [
+                        (cb) => @client.waitForMessage('public-test', 'test', cb)
+                        (cb) => client2.waitForMessage('public-test', 'test', cb)
+                    ], (err) =>
                         return done(err) if err
 
-                        common.clientCount (err, count) =>
-                            assert.equal(count, 1, 'After disconnect')
+                        client2.stop (err) =>
+                            return done(err) if err
 
-                            @client.waitForMessage('public-test', 'test', done)
-                            common.send('public-test', 'test')
+                            common.clientCount (err, count) =>
+                                assert.equal(count, 1, 'After disconnect')
 
-                            common.clientCount (err, count) ->
-                                assert.equal(count, 1, 'After message')
+                                @client.waitForMessage 'public-test', 'test', () ->
+                                    common.clientCount (err, count) ->
+                                        assert.equal(count, 1, 'After message')
+                                        done()
+
+                                common.send('public-test', 'test')
+
