@@ -14,7 +14,7 @@ class BroadcastHub
 
         # Open a sockjs listener and listen for new clients.
         @socket = sockjs.createServer({
-            log: @options.log
+            log: @options.log || () ->
         })
         @socket.installHandlers(@server, { prefix: @options.prefix || '/sockets' })
         @socket.on 'connection', @onSocketConnect
