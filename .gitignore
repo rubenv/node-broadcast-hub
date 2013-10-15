@@ -2,3 +2,4 @@
 /node_modules
 /bower_components
 /test/server/hub.pid
+/test/server/server.pid
