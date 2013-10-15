@@ -9,3 +9,6 @@ matrix:
       - node_js: "0.11"
 before_script:
   - npm install -g grunt-cli
+  - echo 'deb http://dl.google.com/linux/chrome/deb/ stable main' > /etc/apt/sources.list.d/google-chrome.list
+  - apt-get update
+  - apt-get install google-chrome-stable
