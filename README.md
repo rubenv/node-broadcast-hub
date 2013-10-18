@@ -67,8 +67,8 @@ Then, in your client-side JavaScript, connect to the hub and subscribe to some c
 
 ```js
 var client = new BroadcastHubClient();
-c.subscribe('test');
-c.on('message:test', function (message) {
+client.subscribe('test');
+client.on('message:test', function (message) {
 	console.log(message);
 })
 ```
