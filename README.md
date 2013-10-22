@@ -10,7 +10,7 @@ The hub consists of a number of broadcast channels to which clients can subscrib
 
 What it does:
 
-* Provide the needed Websocket handling (based on [socket.io](http://socket.io/)).
+* Provide the needed Websocket handling (based on [sockjs](http://sockjs.org/)).
 * Provides a client-side library for subscribing to broadcast channels.
 * Uses [redis](http://redis.io/) as a pubsub mechanism to achieve scalability.
 * Allows authenticating clients and individual channels.
@@ -42,7 +42,7 @@ broadcastHub.listen(server);        // (2)
 ```
 
 1. When you call `app.listen`, the return value will be a `http.Server`, store this in a variable.
-2. Pass the `http.Server` to broadcast-hub. This will set up the needed socket.io listeners.
+2. Pass the `http.Server` to broadcast-hub. This will set up the needed sockjs listeners.
 
 A full example can be found in `example/server.js`.
 
@@ -53,12 +53,12 @@ Add broadcast-hub to your project (client-side components):
 bower install --save broadcast-hub
 ```
 
-Add the socket.io and broadcast-hub libraries to your app:
+Add the socketjs and broadcast-hub libraries to your app:
 
 ```html
 <head>
     <!-- More stuff here -->
-    <script src="bower_components/socket.io-client/dist/socket.io.min.js"></script>
+    <script src="bower_components/sockjs/sockjs.min.js"></script>
     <script src="bower_components/broadcast-hub/broadcast-hub-client.min.js"></script>
 </head>
 ```
@@ -74,6 +74,26 @@ client.on('message:test', function (message) {
 ```
 
 All received messages in the `test` channel will be output to the console.
+
+#### Client options
+You can optionally pass an options object to the client:
+
+```js
+var client = new BroadcastHubClient({
+    /* Options here */
+});
+```
+
+##### `auth`
+**Type:** `object`
+
+Any data that should be passed to the `canConnect` function on the backend, as the `data` argument.
+
+##### `server`
+**Type:** `string`
+
+The URL on which the client should connect.
+
 
 ### Publishing messages
 Using any redis client, publish a message on the same channel and it'll get relayed to the clients.
@@ -106,9 +126,10 @@ hub.publish('test', 'Test message');
 
 You can optionally pass a completion callback as the third argument to this function.
 
-
 ## Scalability
-The architecture of broadcast-hub is deliberatly kept simple to make scaling possible: as much work as possible is delegated to redis.
+The architecture of broadcast-hub is deliberatly kept simple to make scaling possible.
+
+PubSub is delegate to Redis. Node.JS makes one Redis connection per subscribed channel. This allows fast broadcasting among clients.
 
 If you start to run into the limits of Node.JS:
 
@@ -120,7 +141,11 @@ If you start to run into the limits of redis:
 
 * Use [master/slave replication](http://redis.io/topics/replication) to add more redis tiers.
 
-Be sure to have sufficiently high connection limits set up. Each client requires two connections: one from the browser to Node.JS and one from Node.js to redis. Add another TCP connection if you have nginx as a reverse-proxy (not strictly needed, though recommended to offload compression and encryption).
+Be sure to have sufficiently high connection limits set up. You'll need N+M TCP connections (where N is the number of connected clients and M is the number of subscribed channels in total [1]).
+
+Add another TCP connection per client if you have nginx or haproxy as a reverse-proxy (not strictly needed, though recommended to offload compression and encryption).
+
+[1] Two clients connecting to the same channel will only result in one connection to Redis.
 
 ## Configuration
 You can pass an options object to the `listen` call:
@@ -132,9 +157,9 @@ broadcastHub.listen(server, {
 ```
 
 ### `canConnect`
-**Type:** `function (data, cb)`
+**Type:** `function (client, data, cb)`
 
-A function that can be used to determine whether or not the connecting client is allowed to connect to the broadcast hub. The passed `data` object is described on this page: [https://github.com/LearnBoost/socket.io/wiki/Authorizing](https://github.com/LearnBoost/socket.io/wiki/Authorizing).
+A function that can be used to determine whether or not the connecting client is allowed to connect to the broadcast hub. The passed `data` object is supplied by the client and can be configured using the `auth` option on the client.
 
 The result of this authorization check should be passed to the callback `cb`: This function takes two arguments: an error or a boolean value.
 
@@ -142,17 +167,37 @@ Example:
 
 ```js
 broadcastHub.listen(server, {
-	canConnect: function (data, cb) {
+	canConnect: function (client, data, cb) {
 	    // Do some database lookups here
 	    cb(null, true);
 	}    
 });
 ```
 
+You can store data associated to a client in the `client.data` field.
+
+Example:
+
+```js
+	canConnect: function (client, data, cb) {
+	    // Look up client information
+	    client.data.user = user;
+	    cb(null, true);
+	}    
+```
+
+This data will then be accessible in `canSubscribe`.
+
+
 ### `canSubscribe`
-**Type:** `function (data, channel, cb)`
+**Type:** `function (client, channel, cb)`
 
 Similar to `canConnect`, except that this function decides whether or not the client can subscribe to the requested channel.
+
+### `prefix`
+**Type:** `string`
+
+The URL path on which the socket handlers should be installed. Defaults to `/sockets`.
 
 ## Contributing
 All code lives in the `src` folder and is written in CoffeeScript. Try to stick to the style conventions used in existing code.
