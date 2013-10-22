@@ -1,12 +1,11 @@
-redis = require 'redis'
-
 {after} = require './utils'
+
+Channel = require './channel'
 
 class Client
     constructor: (@hub, @id, @socket) ->
         @authenticated = false
-        @redis = redis.createClient()
-        @redis.on 'message', @onMessage
+        @channels = []
 
         @socket.on 'close', @onDisconnect
         @socket.on 'data', @onData
@@ -32,7 +31,7 @@ class Client
         else if obj.message == 'disconnect'
             @disconnect()
 
-    onMessage: (channel, message) =>
+    relay: (channel, message) =>
         @socket.write(JSON.stringify({
             type: 'message'
             channel: channel
@@ -49,16 +48,18 @@ class Client
                 @authenticated = true
                 cb()
 
-    onSubscribe: (channel, cb) =>
+    onSubscribe: (name, cb) =>
         return cb('handshake required') if !@authenticated
 
-        @hub.canSubscribe @, channel, (err, allowed) =>
+        @hub.canSubscribe @, name, (err, allowed) =>
             return cb(err) if err
             return cb('subscription refused') if !allowed
 
-            @redis.subscribe channel, (err) ->
-                return if !cb
-                return cb(err, channel)
+            Channel.get name, (err, channel) =>
+                return cb(err) if err
+                channel.subscribe(@)
+                @channels.push(channel)
+                cb()
 
     disconnect: () ->
         @onDisconnect()
@@ -66,10 +67,10 @@ class Client
 
     onDisconnect: () =>
         @hub.disconnect(@) if @hub
-        @redis.quit() if @redis
-
         @hub = null
-        @redis = null
+
+        for channel in @channels
+            channel.unsubscribe(@)
 
     checkAuthenticated: () =>
         if !@authenticated
