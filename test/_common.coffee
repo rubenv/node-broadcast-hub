@@ -1,5 +1,5 @@
 class TestClient extends BroadcastHubClient
-    constructor: (@server, cb) ->
+    constructor: (cb) ->
         super({
             server: 'http://localhost:9875/sockets'
             log: () ->
@@ -56,7 +56,7 @@ window.common = common =
     start: (done) ->
         common.startServer (err, server) ->
             return done(err) if err
-            common.createClient server, (err, client) ->
+            common.createClient (err, client) ->
                 done(err, server, client)
 
     stop: (done) ->
@@ -67,8 +67,8 @@ window.common = common =
             clients = []
             common.stopServer(done)
 
-    createClient: (server, cb) ->
-        client = new TestClient(server, cb)
+    createClient: (cb) ->
+        client = new TestClient(cb)
         clients.push(client)
         return client
 

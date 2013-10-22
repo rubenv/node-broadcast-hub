@@ -9,7 +9,7 @@ describe 'Relay', ->
         common.send('public-test', 'test')
 
     it 'Multiple clients all receive the message', (done) ->
-        client2 = common.createClient @server, (err) =>
+        client2 = common.createClient (err) =>
             return done(err) if err
             common.send('public-test', 'multiple')
 
@@ -21,7 +21,7 @@ describe 'Relay', ->
     it 'Server handles disconnects', (done) ->
         common.clientCount (err, count) =>
             assert.equal(count, 1, 'After start')
-            common.createClient @server, (err, client2) =>
+            common.createClient (err, client2) =>
                 return done(err) if err
 
                 common.clientCount (err, count) =>

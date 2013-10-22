@@ -43,7 +43,7 @@ describe 'Channels', ->
                 assert.equal(callsChannel, 1)
                 done()
 
-        client2 = common.createClient @server, (err) =>
+        client2 = common.createClient (err) =>
             return done(err) if err
 
             @client.on 'message', countMessage
@@ -81,5 +81,5 @@ describe 'Channels', ->
                     common.send('public-channel', 'test')
                     common.send('public-test', 'test')
                 
-                common.startServer (err, @server) =>
+                common.startServer (err) ->
                     return done(err) if err
