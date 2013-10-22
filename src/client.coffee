@@ -6,6 +6,7 @@ class Client
     constructor: (@hub, @id, @socket) ->
         @authenticated = false
         @channels = []
+        @data = {}
 
         @socket.on 'close', @onDisconnect
         @socket.on 'data', @onData

@@ -34,11 +34,11 @@ class BroadcastHub
 
     canConnect: (client, data, cb) ->
         return cb(null, true) if !@options.canConnect
-        @options.canConnect(data, cb)
+        @options.canConnect(client, data, cb)
 
     canSubscribe: (client, channel, cb) ->
         return cb(null, true) if !@options.canSubscribe
-        @options.canSubscribe(client.socket.handshake, channel, cb)
+        @options.canSubscribe(client, channel, cb)
 
     publish: (channel, message, cb) ->
         @publishClient = redis.createClient() if !@publishClient

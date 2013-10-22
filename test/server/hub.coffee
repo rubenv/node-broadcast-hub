@@ -17,25 +17,25 @@ startOptions = JSON.parse(process.argv[2] || "{}")
 
 if startOptions.scenario == 'auth-allow'
     info.calls = 0
-    options.canConnect = (data, cb) ->
+    options.canConnect = (client, data, cb) ->
         info.calls++
         cb(null, true)
 
 if startOptions.scenario == 'auth-deny'
     info.calls = 0
-    options.canConnect = (data, cb) ->
+    options.canConnect = (client, data, cb) ->
         info.calls++
         cb(null, false)
 
 if startOptions.scenario == 'channel-allow'
     info.calls = 0
-    options.canSubscribe = (data, channel, cb) ->
+    options.canSubscribe = (client, channel, cb) ->
         info.calls++
         cb(null, true)
 
 if startOptions.scenario == 'channel-deny'
     info.calls = 0
-    options.canSubscribe = (data, channel, cb) ->
+    options.canSubscribe = (client, channel, cb) ->
         info.calls++
         cb(null, channel == 'public-test')
 
