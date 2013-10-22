@@ -109,31 +109,43 @@
       }
     };
 
+    BroadcastHubClient.prototype._handshake = function(cb) {
+      return this.send({
+        message: 'hubConnect',
+        data: this.options.auth || {}
+      }, cb);
+    };
+
     BroadcastHubClient.prototype._onConnected = function() {
-      var channel, emitConnected, msg, toSubscribe, _i, _j, _len, _len1, _ref, _ref1,
-        _this = this;
+      var _this = this;
       this._connected = true;
-      _ref = this._queue;
-      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-        msg = _ref[_i];
-        this.client.send(msg);
-      }
-      this._queue = [];
-      emitConnected = function() {
-        if (toSubscribe === 0) {
-          return _this.emit('connected');
+      return this._handshake(function(err) {
+        var channel, emitConnected, msg, toSubscribe, _i, _j, _len, _len1, _ref, _ref1;
+        if (err) {
+          return _this.emit('error', err);
         }
-      };
-      toSubscribe = this._channels.length;
-      _ref1 = this._channels;
-      for (_j = 0, _len1 = _ref1.length; _j < _len1; _j++) {
-        channel = _ref1[_j];
-        this.subscribe(channel, function(err) {
-          toSubscribe -= 1;
-          return emitConnected();
-        });
-      }
-      return emitConnected();
+        _ref = _this._queue;
+        for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+          msg = _ref[_i];
+          _this.client.send(msg);
+        }
+        _this._queue = [];
+        emitConnected = function() {
+          if (toSubscribe === 0) {
+            return _this.emit('connected');
+          }
+        };
+        toSubscribe = _this._channels.length;
+        _ref1 = _this._channels;
+        for (_j = 0, _len1 = _ref1.length; _j < _len1; _j++) {
+          channel = _ref1[_j];
+          _this.subscribe(channel, function(err) {
+            toSubscribe -= 1;
+            return emitConnected();
+          });
+        }
+        return emitConnected();
+      });
     };
 
     BroadcastHubClient.prototype._onDisconnected = function() {

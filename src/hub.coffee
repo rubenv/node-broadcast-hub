@@ -32,6 +32,10 @@ class BroadcastHub
         client.disconnect() for id, client of @clients
         @clients = {}
 
+    canConnect: (client, data, cb) ->
+        return cb(null, true) if !@options.canConnect
+        @options.canConnect(data, cb)
+
     canSubscribe: (client, channel, cb) ->
         return cb(null, true) if !@options.canSubscribe
         @options.canSubscribe(client.socket.handshake, channel, cb)

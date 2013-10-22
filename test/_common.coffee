@@ -8,7 +8,7 @@ class TestClient extends BroadcastHubClient
 
         @on 'message', @processMessage
         @subscribe 'public-test', (err) =>
-            cb(err, @)
+            cb(err, @) if cb
 
     waitForMessage: (channel, message, cb) ->
         @waiting.push(arguments)
@@ -74,3 +74,6 @@ window.common = common =
 
     clientCount: (cb) ->
         callCoordinator "clients", cb
+
+    serverInfo: (cb) ->
+        callCoordinator "info", cb

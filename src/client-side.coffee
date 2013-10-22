@@ -66,25 +66,30 @@ class BroadcastHubClient
             @emit("message:#{data.channel}", data.message)
             @emit('message', data.channel, data.message)
 
+    _handshake: (cb) ->
+        @send { message: 'hubConnect', data: @options.auth || {} }, cb
+
     _onConnected: () =>
         @_connected = true
-        @client.send(msg) for msg in @_queue
-        @_queue = []
+        @_handshake (err) =>
+            return @emit('error', err) if err
+            @client.send(msg) for msg in @_queue
+            @_queue = []
 
-        emitConnected = () =>
-            @emit('connected') if toSubscribe == 0
+            emitConnected = () =>
+                @emit('connected') if toSubscribe == 0
 
-        # Resubscribe any previously-open channels
-        toSubscribe = @_channels.length
-        for channel in @_channels
-            @subscribe channel, (err) ->
-                toSubscribe -= 1
-                emitConnected()
+            # Resubscribe any previously-open channels
+            toSubscribe = @_channels.length
+            for channel in @_channels
+                @subscribe channel, (err) ->
+                    toSubscribe -= 1
+                    emitConnected()
 
-        # The for loop won't be executed if there are not channels to subscribe
-        # to, call once more to make sure we always have a 'connected'-signal
-        # emitted.
-        emitConnected()
+            # The for loop won't be executed if there are not channels to subscribe
+            # to, call once more to make sure we always have a 'connected'-signal
+            # emitted.
+            emitConnected()
 
     _onDisconnected: () =>
         @client.onopen = null

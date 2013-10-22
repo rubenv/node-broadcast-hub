@@ -22,7 +22,7 @@ stopServer = () ->
 app.post '/start', (req, res, next) ->
     stopServer()
 
-    server = spawn 'coffee', [__dirname + '/hub.coffee'], { stdio: ['ignore', 'pipe', 'pipe' ] }
+    server = spawn 'coffee', [__dirname + '/hub.coffee', JSON.stringify(req.body)], { stdio: ['ignore', 'pipe', 'pipe' ] }
     server.stdout.on 'data', (data) ->
         if /SockJS v.\..+\..+ bound to/.test(data.toString())
             res.json 'OK'
@@ -42,6 +42,12 @@ app.post '/stop', (req, res, next) ->
 app.post '/clients', (req, res, next) ->
     superagent
         .get("http://localhost:9875/clients")
+        .end (result) ->
+            res.json(result.body)
+
+app.post '/info', (req, res, next) ->
+    superagent
+        .get("http://localhost:9875/info")
         .end (result) ->
             res.json(result.body)
 
