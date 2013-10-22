@@ -1,3 +1,8 @@
+# Utilities
+noop = () ->
+after = (timeout, cb) -> setTimeout(cb, timeout)
+
+
 root = @ # In the browser, this will be window
 
 SockJS = root.SockJS
@@ -10,17 +15,21 @@ class BroadcastHubClient
         @_channels = []
         @_queue = []
         @_connected = false
-        @_shuttingDown = false
         @_seq = 0
         @connect()
 
-    connect: () ->
+    connect: () =>
+        @_shuttingDown = false
         throw new Error("Already have a client!") if @client
         @client = new SockJS(@options.server || "/sockets")
         @client.onopen = @_onConnected
         @client.onclose = @_onDisconnected
         @client.onmessage = @_processMessage
 
+    ###
+    # Event emitter methods
+    ###
+    
     on: (event, cb) ->
         return if !cb
         @_listeners[event] = [] if !@_listeners[event]
@@ -39,8 +48,15 @@ class BroadcastHubClient
 
     emit: (event, args...) ->
         return if !@_listeners[event]
-        for listener in @_listeners[event]
+        # Make a copy to prevent issues when a listener calls @off (e.g. with
+        # @once).
+        listeners = @_listeners[event].slice(0)
+        for listener in listeners
             listener.apply(@, args)
+
+    ###
+    # Internal methods
+    ###
 
     _processMessage: (message) =>
         data = JSON.parse(message.data)
@@ -51,14 +67,24 @@ class BroadcastHubClient
             @emit('message', data.channel, data.message)
 
     _onConnected: () =>
-        @_shuttingDown = false
         @_connected = true
-        for msg in @_queue
-            @client.send(JSON.stringify(msg))
+        @client.send(msg) for msg in @_queue
         @_queue = []
 
+        emitConnected = () =>
+            @emit('connected') if toSubscribe == 0
+
         # Resubscribe any previously-open channels
-        @subscribe(channel) for channel in @_channels
+        toSubscribe = @_channels.length
+        for channel in @_channels
+            @subscribe channel, (err) ->
+                toSubscribe -= 1
+                emitConnected()
+
+        # The for loop won't be executed if there are not channels to subscribe
+        # to, call once more to make sure we always have a 'connected'-signal
+        # emitted.
+        emitConnected()
 
     _onDisconnected: () =>
         @client.onopen = null
@@ -68,37 +94,45 @@ class BroadcastHubClient
         @_connected = false
         @emit('disconnected')
 
+        # Retry after a while.
         if !@_shuttingDown
-            @connect()
+            after 250, @connect
 
-    disconnect: (cb) ->
+    ###
+    # External API
+    ###
+    
+    disconnect: (cb = noop) ->
         @_shuttingDown = true
-        if !@_connected
-            cb() if cb
-            return
+        return cb() if !@_connected
         @once 'disconnected', cb
-        @send {
-            message: 'disconnect'
-        }, () =>
+        @send { message: 'disconnect' }, () =>
             @client.close()
 
+    ###
+        Send some data back to the server.
+
+        Optionally accepts a callback function. When supplied, an extra _seq
+        field will be sent to the server, this can then be used server-side to
+        reply to the message. Typical use-case is returning the result of
+        authenticate / subscribe.
+    ###
     send: (data = {}, cb) ->
         if cb
             data._seq = @_seq++
             @once "_callback:#{data._seq}", cb
+        payload = JSON.stringify(data)
         if !@_connected
-            @_queue.push(data)
+            @_queue.push(payload)
         else
-            @client.send(JSON.stringify(data))
+            @client.send(payload)
         return data._seq
 
-    subscribe: (channel, cb) ->
+    subscribe: (channel, cb = noop) ->
         @send { message: 'hubSubscribe', channel: channel }, (err) =>
-            if err
-                cb(err) if cb
-                return
+            return cb(err) if err
             @_channels.push(channel) if channel not in @_channels
-            cb() if cb
+            cb()
 
 if typeof module != 'undefined'
     # Node.js

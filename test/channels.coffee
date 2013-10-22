@@ -56,8 +56,6 @@ describe 'Channels', ->
                 common.send('public-test', 'test') # Will arrive at both clients
 
     it 'Client resubscribes to channels after disconnect', (done) ->
-        @timeout(5000)
-
         port = @server.port
         @client.subscribe 'public-channel', (err) =>
             return done(err) if err
@@ -67,18 +65,21 @@ describe 'Channels', ->
                 # Start new server and manually trigger a reconnect
                 # In event of a failure, socket.io will retry automatically,
                 # but not in this case, it's a clean shutdown.
+
+                disconnect = false
+               
+                calls = 0
+                @client.on 'message', () ->
+                    calls++
+                    assert.equal(disconnect, true)
+                    done() if calls == 2
+
+                @client.on 'disconnected', () ->
+                    disconnect = true
+
+                @client.on 'connected', () ->
+                    common.send('public-channel', 'test')
+                    common.send('public-test', 'test')
                 
                 common.startServer (err, @server) =>
                     return done(err) if err
-                    calls = 0
-                    @client.on 'message', () ->
-                        calls++
-                        done() if calls == 2
-
-                    emit = () ->
-                        common.send('public-channel', 'test') # Will arrive at one client
-                        common.send('public-test', 'test') # Will arrive at both clients
-
-                    # There's no callback for a full reconnect, so
-                    # let's wait until we guess that it'll be ready
-                    setTimeout emit, 20
