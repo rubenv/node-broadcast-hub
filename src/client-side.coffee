@@ -53,6 +53,7 @@ class BroadcastHubClient
         listeners = @_listeners[event].slice(0)
         for listener in listeners
             listener.apply(@, args)
+        return
 
     ###
     # Internal methods

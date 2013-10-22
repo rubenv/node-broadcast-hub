@@ -79,18 +79,16 @@
     };
 
     BroadcastHubClient.prototype.emit = function() {
-      var args, event, listener, listeners, _i, _len, _results;
+      var args, event, listener, listeners, _i, _len;
       event = arguments[0], args = 2 <= arguments.length ? __slice.call(arguments, 1) : [];
       if (!this._listeners[event]) {
         return;
       }
       listeners = this._listeners[event].slice(0);
-      _results = [];
       for (_i = 0, _len = listeners.length; _i < _len; _i++) {
         listener = listeners[_i];
-        _results.push(listener.apply(this, args));
+        listener.apply(this, args);
       }
-      return _results;
     };
 
     /*

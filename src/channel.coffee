@@ -33,8 +33,11 @@ class Channel
             @redis.quit()
             delete channels[@name]
 
+        return
+
     onMessage: (channel, message) =>
         for client in @clients
             client.relay(channel, message)
+        return
 
 module.exports = Channel
