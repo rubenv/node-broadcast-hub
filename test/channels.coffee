@@ -62,9 +62,6 @@ describe 'Channels', ->
 
             common.stopServer (err) =>
                 return done(err) if err
-                # Start new server and manually trigger a reconnect
-                # In event of a failure, socket.io will retry automatically,
-                # but not in this case, it's a clean shutdown.
 
                 disconnect = false
                
