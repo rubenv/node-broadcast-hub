@@ -1,6 +1,8 @@
 redis = require 'redis'
 sockjs = require 'sockjs'
 
+{defaults} = require './utils'
+
 Client = require './client'
 
 class BroadcastHub
@@ -8,6 +10,14 @@ class BroadcastHub
         # Clients are tracked in a hash, this gives us O(1) disconnects.
         @clients = {}
         @clientId = 0
+
+        # Defaults for options
+        defaults(@options, {
+            redisHost: '127.0.0.1'
+            redisPort: 6379
+            publishHost: @options.redisHost || '127.0.0.1'
+            pubishPort: @options.redisPort || 6379
+        })
 
         # Channels
         @channels = {}
@@ -18,8 +28,6 @@ class BroadcastHub
         })
         @socket.installHandlers(@server, { prefix: @options.prefix || '/sockets' })
         @socket.on 'connection', @onSocketConnect
-        #@io.set('authorization', @options.canConnect || false)
-        #@io.sockets.on 'connection', @onSocketConnect
 
     onSocketConnect: (socket) =>
         @clients[@clientId] = new Client(@, @clientId, socket)
@@ -41,7 +49,7 @@ class BroadcastHub
         @options.canSubscribe(client, channel, cb)
 
     publish: (channel, message, cb) ->
-        @publishClient = redis.createClient() if !@publishClient
+        @publishClient = redis.createClient(@options.pubishPort, @options.publishHost) if !@publishClient
         @publishClient.publish(channel, message, cb)
 
     # Counting clients is O(n), but that's okay, it's a diagnostic thing for

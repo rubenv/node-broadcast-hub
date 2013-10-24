@@ -56,7 +56,7 @@ class Client
             return cb(err) if err
             return cb('subscription refused') if !allowed
 
-            Channel.get name, (err, channel) =>
+            Channel.get @hub, name, (err, channel) =>
                 return cb(err) if err
                 channel.subscribe(@)
                 @channels.push(channel)

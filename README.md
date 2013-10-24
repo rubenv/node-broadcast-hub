@@ -199,6 +199,26 @@ Similar to `canConnect`, except that this function decides whether or not the cl
 
 The URL path on which the socket handlers should be installed. Defaults to `/sockets`.
 
+### `redisHost`
+**Type:** `string` (default: `127.0.0.1`)
+
+The hostname of the redis server used for subscriptions.
+
+### `redisPort`
+**Type:** `int` (default: `6379`)
+
+The port of the redis server used for subscriptions.
+
+### `publishHost`
+**Type:** `string` (default: `options.redisHost`)
+
+The hostname of the redis server used for publishing messages (may be different if you use master/server replication).
+
+### `redisPort`
+**Type:** `int` (default: `options.publishPort`)
+
+The port of the redis server used for publishing.
+
 ## Contributing
 All code lives in the `src` folder and is written in CoffeeScript. Try to stick to the style conventions used in existing code.
 

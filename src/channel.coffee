@@ -3,18 +3,18 @@ redis = require 'redis'
 channels = {}
 
 class Channel
-    @get: (name, cb) ->
+    @get: (hub, name, cb) ->
         if channels[name]
             return cb(null, channels[name])
 
-        channel = channels[name] = new Channel(name)
+        channel = channels[name] = new Channel(hub, name)
         channel.prepare (err) ->
             cb(err, channel)
 
-    constructor: (@name) ->
+    constructor: (@hub, @name) ->
         @clients = []
 
-        @redis = redis.createClient()
+        @redis = redis.createClient(@hub.options.redisPort, @hub.options.redisHost)
         @redis.on 'message', @onMessage
 
     prepare: (cb) ->
