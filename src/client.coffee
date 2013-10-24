@@ -72,7 +72,7 @@ class Client
 
         for channel in @channels
             channel.unsubscribe(@)
-        @channels = null
+        @channels = []
 
     checkAuthenticated: () =>
         if !@authenticated
