@@ -231,7 +231,7 @@
 
   })();
 
-  if (typeof module !== 'undefined') {
+  if (typeof require !== 'undefined') {
     module.exports = BroadcastHubClient;
   } else {
     root.BroadcastHubClient = BroadcastHubClient;
