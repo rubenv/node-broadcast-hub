@@ -37,7 +37,7 @@ class BroadcastHubClient
 
     once: (event, cb) ->
         return if !cb
-        wrapper = () ->
+        wrapper = () =>
             cb.apply(@, arguments)
             @off(event, wrapper)
         @on(event, wrapper)

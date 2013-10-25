@@ -60,13 +60,14 @@
     };
 
     BroadcastHubClient.prototype.once = function(event, cb) {
-      var wrapper;
+      var wrapper,
+        _this = this;
       if (!cb) {
         return;
       }
       wrapper = function() {
-        cb.apply(this, arguments);
-        return this.off(event, wrapper);
+        cb.apply(_this, arguments);
+        return _this.off(event, wrapper);
       };
       return this.on(event, wrapper);
     };
