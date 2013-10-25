@@ -2,6 +2,8 @@
 
 > Exposes redis pubsub channels over websockets.
 
+[![Build Status](https://travis-ci.org/rubenv/node-broadcast-hub.png?branch=master)](https://travis-ci.org/rubenv/node-broadcast-hub)
+
 ## Introduction
 
 The broadcast-hub module provides easy-to-use middleware for adding real-time notifications to your web applications. It is intended to be both easy to integrate (low effort) yet scalable.
