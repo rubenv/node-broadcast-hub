@@ -29,12 +29,14 @@
       this._channels = [];
       this._queue = [];
       this._connected = false;
+      this._attempt = 0;
       this._seq = 0;
       this.connect();
     }
 
     BroadcastHubClient.prototype.connect = function() {
       this._shuttingDown = false;
+      this._attempt = Math.min(this._attempt + 1, 20);
       if (this.client) {
         throw new Error("Already have a client!");
       }
@@ -117,6 +119,7 @@
 
     BroadcastHubClient.prototype._onConnected = function() {
       var _this = this;
+      this._attempt = 0;
       this._connected = true;
       return this._handshake(function(err) {
         var channel, emitConnected, msg, toSubscribe, _i, _j, _len, _len1, _ref, _ref1;
@@ -155,7 +158,7 @@
       this._connected = false;
       this.emit('disconnected');
       if (!this._shuttingDown) {
-        return after(250, this.connect);
+        return after(this._attempt * 250, this.connect);
       }
     };
 

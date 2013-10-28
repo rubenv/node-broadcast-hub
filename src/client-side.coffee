@@ -15,11 +15,13 @@ class BroadcastHubClient
         @_channels = []
         @_queue = []
         @_connected = false
+        @_attempt = 0
         @_seq = 0
         @connect()
 
     connect: () =>
         @_shuttingDown = false
+        @_attempt = Math.min(@_attempt + 1, 20)
         throw new Error("Already have a client!") if @client
         @client = new SockJS(@options.server || "/sockets")
         @client.onopen = @_onConnected
@@ -71,6 +73,7 @@ class BroadcastHubClient
         @send { message: 'hubConnect', data: @options.auth || {} }, cb
 
     _onConnected: () =>
+        @_attempt = 0
         @_connected = true
         @_handshake (err) =>
             return @emit('error', err) if err
@@ -102,7 +105,7 @@ class BroadcastHubClient
 
         # Retry after a while.
         if !@_shuttingDown
-            after 250, @connect
+            after @_attempt * 250, @connect
 
     ###
     # External API
