@@ -143,9 +143,4 @@ class BroadcastHubClient
             @_channels.push(channel) if channel not in @_channels
             cb()
 
-if typeof require != 'undefined'
-    # Node.js
-    module.exports = BroadcastHubClient
-else
-    # Browsers
-    root.BroadcastHubClient = BroadcastHubClient
+root.BroadcastHubClient = BroadcastHubClient
