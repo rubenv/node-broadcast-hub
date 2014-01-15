@@ -139,7 +139,10 @@ class BroadcastHubClient
 
     subscribe: (channel, cb = noop) ->
         @send { message: 'hubSubscribe', channel: channel }, (err) =>
-            return cb(err) if err
+            if err
+                @emit 'error', err
+                cb(err)
+                return
             @_channels.push(channel) if channel not in @_channels
             cb()
 

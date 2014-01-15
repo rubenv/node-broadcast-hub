@@ -222,7 +222,9 @@
         channel: channel
       }, function(err) {
         if (err) {
-          return cb(err);
+          _this.emit('error', err);
+          cb(err);
+          return;
         }
         if (__indexOf.call(_this._channels, channel) < 0) {
           _this._channels.push(channel);
