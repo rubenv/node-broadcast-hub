@@ -1,6 +1,6 @@
 {
   "name": "broadcast-hub",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "main": "./lib/index.js",
   "description": "WebSockets backed by Redis pubsub.",
   "keywords": [
