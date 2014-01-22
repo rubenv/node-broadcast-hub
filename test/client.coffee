@@ -70,3 +70,4 @@ describe 'Client', ->
     it 'Will retry connection after connection failure'
     it 'Waits for a certain time to retry the connection'
     it 'Gives up on the connection after a number of tries'
+    it 'Signals connection errors'
