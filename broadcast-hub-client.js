@@ -46,10 +46,10 @@
       return this.client.onmessage = this._processMessage;
     };
 
-    /*
-    # Event emitter methods
-    */
 
+    /*
+     * Event emitter methods
+     */
 
     BroadcastHubClient.prototype.on = function(event, cb) {
       if (!cb) {
@@ -62,15 +62,16 @@
     };
 
     BroadcastHubClient.prototype.once = function(event, cb) {
-      var wrapper,
-        _this = this;
+      var wrapper;
       if (!cb) {
         return;
       }
-      wrapper = function() {
-        cb.apply(_this, arguments);
-        return _this.off(event, wrapper);
-      };
+      wrapper = (function(_this) {
+        return function() {
+          cb.apply(_this, arguments);
+          return _this.off(event, wrapper);
+        };
+      })(this);
       return this.on(event, wrapper);
     };
 
@@ -94,10 +95,10 @@
       }
     };
 
-    /*
-    # Internal methods
-    */
 
+    /*
+     * Internal methods
+     */
 
     BroadcastHubClient.prototype._processMessage = function(message) {
       var data;
@@ -118,36 +119,37 @@
     };
 
     BroadcastHubClient.prototype._onConnected = function() {
-      var _this = this;
       this._attempt = 0;
       this._connected = true;
-      return this._handshake(function(err) {
-        var channel, emitConnected, msg, toSubscribe, _i, _j, _len, _len1, _ref, _ref1;
-        if (err) {
-          return _this.emit('error', err);
-        }
-        _ref = _this._queue;
-        for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-          msg = _ref[_i];
-          _this.client.send(msg);
-        }
-        _this._queue = [];
-        emitConnected = function() {
-          if (toSubscribe === 0) {
-            return _this.emit('connected');
+      return this._handshake((function(_this) {
+        return function(err) {
+          var channel, emitConnected, msg, toSubscribe, _i, _j, _len, _len1, _ref, _ref1;
+          if (err) {
+            return _this.emit('error', err);
           }
+          _ref = _this._queue;
+          for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+            msg = _ref[_i];
+            _this.client.send(msg);
+          }
+          _this._queue = [];
+          emitConnected = function() {
+            if (toSubscribe === 0) {
+              return _this.emit('connected');
+            }
+          };
+          toSubscribe = _this._channels.length;
+          _ref1 = _this._channels;
+          for (_j = 0, _len1 = _ref1.length; _j < _len1; _j++) {
+            channel = _ref1[_j];
+            _this.subscribe(channel, function(err) {
+              toSubscribe -= 1;
+              return emitConnected();
+            });
+          }
+          return emitConnected();
         };
-        toSubscribe = _this._channels.length;
-        _ref1 = _this._channels;
-        for (_j = 0, _len1 = _ref1.length; _j < _len1; _j++) {
-          channel = _ref1[_j];
-          _this.subscribe(channel, function(err) {
-            toSubscribe -= 1;
-            return emitConnected();
-          });
-        }
-        return emitConnected();
-      });
+      })(this));
     };
 
     BroadcastHubClient.prototype._onDisconnected = function() {
@@ -162,13 +164,12 @@
       }
     };
 
-    /*
-    # External API
-    */
 
+    /*
+     * External API
+     */
 
     BroadcastHubClient.prototype.disconnect = function(cb) {
-      var _this = this;
       if (cb == null) {
         cb = noop;
       }
@@ -179,10 +180,13 @@
       this.once('disconnected', cb);
       return this.send({
         message: 'disconnect'
-      }, function() {
-        return _this.client.close();
-      });
+      }, (function(_this) {
+        return function() {
+          return _this.client.close();
+        };
+      })(this));
     };
+
 
     /*
         Send some data back to the server.
@@ -191,8 +195,7 @@
         field will be sent to the server, this can then be used server-side to
         reply to the message. Typical use-case is returning the result of
         authenticate / subscribe.
-    */
-
+     */
 
     BroadcastHubClient.prototype.send = function(data, cb) {
       var payload;
@@ -213,24 +216,25 @@
     };
 
     BroadcastHubClient.prototype.subscribe = function(channel, cb) {
-      var _this = this;
       if (cb == null) {
         cb = noop;
       }
       return this.send({
         message: 'hubSubscribe',
         channel: channel
-      }, function(err) {
-        if (err) {
-          _this.emit('error', err);
-          cb(err);
-          return;
-        }
-        if (__indexOf.call(_this._channels, channel) < 0) {
-          _this._channels.push(channel);
-        }
-        return cb();
-      });
+      }, (function(_this) {
+        return function(err) {
+          if (err) {
+            _this.emit('error', err);
+            cb(err);
+            return;
+          }
+          if (__indexOf.call(_this._channels, channel) < 0) {
+            _this._channels.push(channel);
+          }
+          return cb();
+        };
+      })(this));
     };
 
     return BroadcastHubClient;
