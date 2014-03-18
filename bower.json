@@ -11,6 +11,6 @@
     "example"
   ],
   "dependencies": {
-    "sockjs": "~0.3.4"
+    "sockjs": "git://github.com/rubenv/bower-sockjs#master"
   }
 }
