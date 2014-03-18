@@ -16,3 +16,5 @@ module.exports = (config) ->
         singleRun: true
         proxies:
             '/coordinate': 'http://localhost:9876'
+        preprocessors:
+            '**/*.coffee': ['coffee']
