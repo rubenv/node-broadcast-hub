@@ -16,7 +16,7 @@ class BroadcastHub
             redisHost: '127.0.0.1'
             redisPort: 6379
             publishHost: @options.redisHost || '127.0.0.1'
-            pubishPort: @options.redisPort || 6379
+            publishPort: @options.redisPort || 6379
         })
 
         # Channels
@@ -49,7 +49,7 @@ class BroadcastHub
         @options.canSubscribe(client, channel, cb)
 
     publish: (channel, message, cb) ->
-        @publishClient = redis.createClient(@options.pubishPort, @options.publishHost) if !@publishClient
+        @publishClient = redis.createClient(@options.publishPort, @options.publishHost) if !@publishClient
         @publishClient.publish(channel, message, cb)
 
     # Counting clients is O(n), but that's okay, it's a diagnostic thing for
