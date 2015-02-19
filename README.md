@@ -211,15 +211,25 @@ The hostname of the redis server used for subscriptions.
 
 The port of the redis server used for subscriptions.
 
+### `redisAuth`
+**Type:** `string` (default: `null`)
+
+Passed to ``redis.auth`` after the subscription client is created, useful on heroku when auth is required
+
 ### `publishHost`
 **Type:** `string` (default: `options.redisHost`)
 
 The hostname of the redis server used for publishing messages (may be different if you use master/server replication).
 
-### `redisPort`
+### `publishPort`
 **Type:** `int` (default: `options.publishPort`)
 
 The port of the redis server used for publishing.
+
+### `publishAuth`
+**Type:** `string` (default: `null`)
+
+Passed to ``redis.auth`` after the publishing client is created, useful on heroku when auth is required
 
 ## Contributing
 All code lives in the `src` folder and is written in CoffeeScript. Try to stick to the style conventions used in existing code.
