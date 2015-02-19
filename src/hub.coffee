@@ -49,7 +49,11 @@ class BroadcastHub
         @options.canSubscribe(client, channel, cb)
 
     publish: (channel, message, cb) ->
-        @publishClient = redis.createClient(@options.publishPort, @options.publishHost) if !@publishClient
+        if !@publishClient
+            @publishClient = redis.createClient(@options.publishPort, @options.publishHost) 
+            if @options.publishAuth
+                @publishClient.auth(@options.publishAuth);
+
         @publishClient.publish(channel, message, cb)
 
     # Counting clients is O(n), but that's okay, it's a diagnostic thing for

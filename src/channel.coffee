@@ -15,6 +15,9 @@ class Channel
         @clients = []
 
         @redis = redis.createClient(@hub.options.redisPort, @hub.options.redisHost)
+        if @hub.options.redisAuth
+            @redis.auth(@hub.options.redisAuth);
+
         @redis.on 'message', @onMessage
 
     prepare: (cb) ->
